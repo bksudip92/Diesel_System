@@ -19,7 +19,6 @@ export default function Login() {
       .select('*')
       .eq('username', username)
       .eq('password', password)
-      .single()
 
     if (error || !data) {
       Alert.alert('Login failed', 'Invalid username or password')
