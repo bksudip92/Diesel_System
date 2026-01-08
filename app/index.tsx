@@ -25,9 +25,9 @@ export default function Login() {
       console.log(error)
       return
     }
-
-    // Login success → go to dashboard
-    router.replace('/dashboard')
+    if (data && data.length > 0 && data[0]?.username) {
+      router.push(`/dashboard?userId=${encodeURIComponent(data[0].username)}&place=${encodeURIComponent(data[0].place)}`)
+    }
   }
 
   return (

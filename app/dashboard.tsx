@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Button, FlatList, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 
@@ -9,22 +9,26 @@ export interface FuelLog {
   filled_liters: number;
   calculated_efficiency: number | null;
   transaction_timestamp: string;
+  place : string,
   vehicles: { vehicle_number: string };
-  drivers: { driver_name: string };
 }
 export interface FuelLogFlat{
   id: number;
   filled_liters: number;
   calculated_efficiency: number | null;
   transaction_timestamp: string;
+  place : string,
   vehicles: string ;
-  drivers: string ;
 }
 
 export default function Dashboard() {
   const router = useRouter();
+  const params = useLocalSearchParams()
   const [logs, setLogs] = useState<FuelLog[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); 
+
+  const username = Array.isArray(params.userId) ? params.userId[0] : params.userId ;
+  const place = Array.isArray(params.place) ? params.place[0] : params.place ;
 
   const fetchLogs = async () => {
     const { data, error } = await supabase
@@ -34,10 +38,11 @@ export default function Dashboard() {
               calculated_efficiency,
               calculated_distance,
               transaction_timestamp,
-              drivers(driver_name),
+              place,
               vehicles(vehicle_number)`)
+      .eq("place", place )
       .order('transaction_timestamp', { ascending: false })
-      .limit(20);
+      .limit(10);
       
       
     if (error) {
@@ -50,14 +55,11 @@ export default function Dashboard() {
         filled_liters: row.filled_liters,
         calculated_efficiency: row.calculated_efficiency,
         transaction_timestamp: row.transaction_timestamp,
+        place : row.place,
         
         vehicles: Array.isArray(row.vehicles)
           ? ((row.vehicles[0] as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle')
           : ((row.vehicles as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle'),
-
-        drivers: Array.isArray(row.drivers)
-          ? ((row.drivers[0] as { driver_name?: string })?.driver_name ?? 'Unknown Driver')
-          : ((row.drivers as { driver_name?: string })?.driver_name ?? 'Unknown Driver'),
       }));
       // Cast to any to satisfy setLogs typing, or preferably update state and types
       setLogs(flattened as any);
@@ -149,11 +151,16 @@ return (
         contentContainerStyle={styles.listContent}
       />
     </View>
-    <View style={styles.buttonContainer}>
-          <Button title='Scan QR'  onPress={() => router.push('/qr-scanner')}>
-          {/* <Text style={styles.buttonText}>Continue</Text> */}
-        </Button>
-      </View>
+        <View style={styles.buttonContainer}>
+              
+        <Pressable onPress={() => router.push("/fill-fuel")} style={() => styles.button}>
+            <Text style={styles.buttonText}>Scan QR</Text>
+        </Pressable>
+
+        <Pressable style={styles.button} onPress={() => router.push("/new-vehicle")}>
+            <Text style={styles.buttonText}> New Vehicle </Text>
+        </Pressable>
+    </View>
   </SafeAreaView>
 );
 }
@@ -175,14 +182,34 @@ headerRow: {
   alignItems: 'center',
   marginBottom: 16,
 },
-buttonContainer:{
-  width : 200,
-  height : 40,
-  marginVertical : 20,
-  marginHorizontal : "25%",
-  // flex: 1,
+screenContainer: {
+  flex: 1,
+  backgroundColor: '#050505', // Very dark/black background
+},
+
+// 2. The Main Rectangle Container
+buttonContainer: {
+  flexDirection: 'row',
   justifyContent: 'space-between',
+  gap: 10,
+  marginVertical: 20,
+  marginHorizontal : 15,
+},
+button: {
+  flex: 1,
+  paddingVertical: 15,
+  paddingHorizontal: 10,
+  borderWidth: 1,
+  borderColor: '#000000',
+  backgroundColor: '#2563eb',
+  borderRadius: 10,
   alignItems: 'center',
+  justifyContent: 'center',
+},
+buttonText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: '600',
 },
 screenTitle: {
   fontSize: 24,
@@ -195,7 +222,7 @@ listContent: {
 card: {
   backgroundColor: '#fff',
   borderRadius: 12,
-  padding: 16,
+  padding: 12,
   marginBottom: 12,
   // Shadow for iOS
   shadowColor: '#000',
