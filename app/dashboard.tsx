@@ -1,5 +1,6 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
@@ -66,7 +67,7 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
+  useFocusEffect(() => {
     fetchLogs();
     
     // // Optional: Subscribe to Realtime changes so the list updates instantly
@@ -83,7 +84,7 @@ export default function Dashboard() {
     // return () => {
     //   supabase.removeChannel(subscription);
     // };
-  }, []);
+  });
 
  // 3. Helper to format the date
  const formatDate = (dateString: string) => {

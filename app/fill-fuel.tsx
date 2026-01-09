@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -20,6 +21,11 @@ interface FuelLog {
   filled_liters: number;
   calculated_efficiency: number | null;
   transaction_timestamp: string;
+}
+
+interface UserProfile {
+  name: string | null;
+  location: string | null ;
 }
 
 export interface FuelLogWithVehicle {
@@ -148,7 +154,18 @@ export default function FillFuel() {
   };
 
   const handleSubmit = async () => {
-   
+
+    let UserInfo = {} as UserProfile
+    try {
+      const jsonValue = await AsyncStorage.getItem('@user_profile');
+       UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
+    } catch (e) {
+      console.error("Error reading user", e);
+      Alert.alert('Error', 'Failed to read user info. Please log in again.');
+      return;
+    }
+    const place = (UserInfo as any).place ?? '';
+    
     const reading = parseFloat(meterReading);
     const filled = parseFloat(filledLiters);
     
@@ -182,6 +199,7 @@ export default function FillFuel() {
           calculated_distance: distance,
           filled_liters: filled,
           calculated_efficiency: efficiency,
+          place : place,
           transaction_timestamp: new Date().toISOString(),
         });
 

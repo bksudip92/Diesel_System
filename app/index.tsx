@@ -1,8 +1,14 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { supabase } from '../lib/supabase';
+
+interface UserProfile {
+  name: string;
+  location: string;
+}
 
 export default function Login() {
   const router = useRouter();
@@ -29,6 +35,17 @@ export default function Login() {
     }
     if (data && data.length > 0 && data[0]?.username) {
       router.push(`/dashboard?userId=${encodeURIComponent(data[0].username)}&place=${encodeURIComponent(data[0].place)}`)
+
+      const saveUser = async (user: UserProfile) => {
+        try {
+          const jsonValue = JSON.stringify(user);
+          await AsyncStorage.setItem('@user_profile', jsonValue);
+        } catch (e) {
+          console.error("Error saving user", e);
+        }
+      };
+      saveUser(data[0])
+      console.log(data[0])
     }
   }
 
