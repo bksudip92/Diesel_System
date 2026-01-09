@@ -1,63 +1,88 @@
-import { Camera, CameraView } from 'expo-camera';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Stack, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Button, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function VehicleScanner() {
   const router = useRouter();
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [hasPermission, setHasPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  useEffect(() => {
-    const getCameraPermissions = async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    };
-    getCameraPermissions();
-  }, []);
+  // useEffect(() => {
+  //   const getCameraPermissions = async () => {
+  //     // const { status } = await Camera.requestCameraPermissionsAsync();
+  //     // setHasPermission(status === 'granted');
+  //     if (!hasPermission?.granted) {
+  //       await requestPermission();
+  //   };
+  // }
+  //   getCameraPermissions();
+  // }, [hasPermission]);
 
-  const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    router.push(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
-  };
+  // const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
+  //   if (data) {
+  //     router.push(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
+  //     console.log(data, typeof(data))
+  //     return
+  //   };
+  //   setScanned(true);
+  // }
 
-  if (hasPermission === null) {
+  // if (hasPermission === null) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text>Requesting camera permission...</Text>
+  //     </View>
+  //   );
+
+  // if (hasPermission?.granted) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text>No access to camera</Text>
+  //     </View>
+  //   );
+  // }
+
+  if (!hasPermission?.granted) {
     return (
-      <View style={styles.container}>
-        <Text>Requesting camera permission...</Text>
+      <View>
+        <Text>We need your permission to show the camera</Text>
+        <Button onPress={setHasPermission} title="Grant permission" />
       </View>
     );
   }
-
-  if (hasPermission === false) {
-    return (
-      <View style={styles.container}>
-        <Text>No access to camera</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <CameraView
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ['qr'],
+    <SafeAreaProvider style={StyleSheet.absoluteFillObject}>
+      <Stack.Screen
+        options={{
+          title: "Overview",
+          headerShown: false,
         }}
-        style={StyleSheet.absoluteFillObject}
       />
+      {Platform.OS === "android" ? <StatusBar hidden /> : null}
+      <CameraView
+        style={StyleSheet.absoluteFillObject}
+        facing="back"
+        onBarcodeScanned={({ data }: { data: string }) => {
+          if (data) {
+            router.push(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
+            console.log(data, typeof data);
+            return;
+          }
+          setScanned(true);
+        }}
+        />
       {!scanned && (
         <View style={styles.overlay}>
           <View style={styles.scanFrame} />
           <Text style={styles.overlayText}>Scan Vehicle QR Code</Text>
         </View>
       )}
-      
-    </View>
+    </SafeAreaProvider>
   );
-}
 
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,

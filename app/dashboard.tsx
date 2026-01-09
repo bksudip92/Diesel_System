@@ -153,7 +153,7 @@ return (
     </View>
         <View style={styles.buttonContainer}>
               
-        <Pressable onPress={() => router.push("/fill-fuel")} style={() => styles.button}>
+        <Pressable onPress={() => router.push("/qr-scanner")} style={() => styles.button}>
             <Text style={styles.buttonText}>Scan QR</Text>
         </Pressable>
 

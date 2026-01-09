@@ -1,12 +1,14 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Button, Text, TextInput, View } from 'react-native';
+import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 export default function Login() {
   const router = useRouter();
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -32,6 +34,13 @@ export default function Login() {
 
   return (
     <View style={{ padding: 40 }}>
+      <View style={styles.ImageContainer}>
+        <Image
+          source={"./assets/images/bk.jng"} 
+          style={{ width: 200, height: 200 }}
+        />
+        <Text> Om Shanti</Text>
+      </View>
       <Text style={{ fontSize: 24, margin: 20 }}>
         Login
       </Text>
@@ -63,3 +72,12 @@ export default function Login() {
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  ImageContainer : {
+    height : "30%",
+    width : "100%",
+    justifyContent : "center",
+    alignContent : "center"
+  }
+})
