@@ -208,7 +208,7 @@ export default function FillFuel() {
       Alert.alert('Success', 'Fuel log entry created successfully!', [
         {
           text: 'OK',
-          onPress: () => router.push("/dashboard"),
+          onPress: () => router.navigate("/dashboard"),
         },
       ]);
       
@@ -235,7 +235,7 @@ export default function FillFuel() {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Vehicle ID Not Found</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push("/dashboard")}>
+        <TouchableOpacity style={styles.button} onPress={() => router.navigate("/dashboard")}>
           <Text style={styles.buttonText}>Go Back</Text>
         </TouchableOpacity>
       </View>

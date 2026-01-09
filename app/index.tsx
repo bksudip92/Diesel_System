@@ -13,9 +13,20 @@ interface UserProfile {
 export default function Login() {
   const router = useRouter();
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [password, setPassword] = useState('') 
 
+  // useEffect(() => {
+  //   const { data , error } = await supabase
+  //     .storage
+  //     .from('Image')
+  //     .getPublicUrl("https://ekiedurclpnzdhwftmod.supabase.co/storage/v1/object/sign/Images/bk.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85YTVmYjQ5MS0xMWIzLTQ5ZmMtYWI1ZS1iZTJiNDJkNGZmMDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvYmsuanBnIiwiaWF0IjoxNzY3OTU0ODI1LCJleHAiOjIwODMzMTQ4MjV9.TV7HXhac6rJ_z9yeQjZBwyuiIx10bP4FosDLa6H1Iu0")
 
+  
+  //   return () => {
+  //     second
+  //   }
+  // }, [third])
+  
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert('Error', 'Please fill all fields')
@@ -27,14 +38,14 @@ export default function Login() {
       .select('*')
       .eq('username', username)
       .eq('password', password)
-
+    
     if (error || !data) {
       Alert.alert('Login failed', 'Invalid username or password')
       console.log(error)
       return
     }
     if (data && data.length > 0 && data[0]?.username) {
-      router.push(`/dashboard?userId=${encodeURIComponent(data[0].username)}&place=${encodeURIComponent(data[0].place)}`)
+      router.navigate(`/dashboard`)
 
       const saveUser = async (user: UserProfile) => {
         try {
@@ -45,7 +56,6 @@ export default function Login() {
         }
       };
       saveUser(data[0])
-      console.log(data[0])
     }
   }
 
@@ -53,14 +63,11 @@ export default function Login() {
     <View style={{ padding: 40 }}>
       <View style={styles.ImageContainer}>
         <Image
-          source={"./assets/images/bk.jng"} 
-          style={{ width: 200, height: 200 }}
+          source={"https://ekiedurclpnzdhwftmod.supabase.co/storage/v1/object/sign/Images/bk-removebg-preview.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85YTVmYjQ5MS0xMWIzLTQ5ZmMtYWI1ZS1iZTJiNDJkNGZmMDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvYmstcmVtb3ZlYmctcHJldmlldy5wbmciLCJpYXQiOjE3Njc5NTU4NjAsImV4cCI6MjA4MzMxNTg2MH0.j6zP3mhwixxNHvS39Oges7Y_FlsEOwaCfUesXEUaUw8"} 
+          style={{ width: 200, height: 200, marginRight: "auto", marginLeft: "auto"}}
         />
-        <Text> Om Shanti</Text>
+         <Text style={styles.Text}> OM SHANTI</Text>
       </View>
-      <Text style={{ fontSize: 24, margin: 20 }}>
-        Login
-      </Text>
 
       <TextInput
         placeholder="Username"
@@ -92,9 +99,16 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   ImageContainer : {
-    height : "30%",
+    height : "50%",
     width : "100%",
     justifyContent : "center",
     alignContent : "center"
+  },
+  Text : {
+    fontWeight : 'bold',
+    fontSize : 20,
+     marginRight: "auto",
+     marginLeft: "auto",
+    marginVertical : 50
   }
 })

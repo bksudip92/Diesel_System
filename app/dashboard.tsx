@@ -1,9 +1,11 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
+
 
 export interface FuelLog {
   id: number;
@@ -21,6 +23,10 @@ export interface FuelLogFlat{
   place : string,
   vehicles: string ;
 }
+interface UserProfile {
+  name: string;
+  place : string ;
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -28,10 +34,18 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<FuelLog[]>([]);
   const [refreshing, setRefreshing] = useState(false); 
 
-  const username = Array.isArray(params.userId) ? params.userId[0] : params.userId ;
-  const place = Array.isArray(params.place) ? params.place[0] : params.place ;
-
   const fetchLogs = async () => {
+
+    let UserInfo = {} as UserProfile
+    try {
+      const jsonValue = await AsyncStorage.getItem('@user_profile');
+       UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
+    } catch (e) {
+      console.error("Error reading user", e);
+      Alert.alert('Error', 'Failed to read user info. Please log in again.');
+      return;
+    }
+    const place = (UserInfo ).place ?? '';
     const { data, error } = await supabase
       .from('fuel_logs')
       .select(`id,
@@ -154,11 +168,11 @@ return (
     </View>
         <View style={styles.buttonContainer}>
               
-        <Pressable onPress={() => router.push("/qr-scanner")} style={() => styles.button}>
+        <Pressable onPress={() => router.navigate("/qr-scanner")} style={() => styles.button}>
             <Text style={styles.buttonText}>Scan QR</Text>
         </Pressable>
 
-        <Pressable style={styles.button} onPress={() => router.push("/new-vehicle")}>
+        <Pressable style={styles.button} onPress={() => router.navigate("/new-vehicle")}>
             <Text style={styles.buttonText}> New Vehicle </Text>
         </Pressable>
     </View>
