@@ -44,7 +44,8 @@ export default function Login() {
       console.log(error)
       return
     }
-    if (data && data.length > 0 && data[0]?.username) {
+    if (data && data.length > 0) {
+      console.log("data",data[0].username,data[0].password)
       router.navigate(`/dashboard`)
 
       const saveUser = async (user: UserProfile) => {
@@ -57,6 +58,9 @@ export default function Login() {
       };
       saveUser(data[0])
     }
+    console.log("data",data)
+    router.navigate(`/dashboard`)
+
   }
 
   return (

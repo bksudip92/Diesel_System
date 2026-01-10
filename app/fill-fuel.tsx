@@ -90,14 +90,16 @@ export default function FillFuel() {
         .select("*")       
         .eq("vehicle_number", vehicleId )     // To make we get only specific vehicle logs
         .limit(5)
+        .order('transaction_timestamp', { ascending: false });
     
-      // if (error) {
-      //   throw error;
-      // }
+      if (error) {
+        Alert.alert("Can't able to Fetch data")  
+      }
 
       if (data) {
         if (Array.isArray(data) && data.length > 0) {
           setLastFuelLog(data[0]);
+          console.log(data);
           
         } else {
           setLastFuelLog(null);
