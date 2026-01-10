@@ -9,41 +9,6 @@ export default function VehicleScanner() {
   const [hasPermission, setHasPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  // useEffect(() => {
-  //   const getCameraPermissions = async () => {
-  //     // const { status } = await Camera.requestCameraPermissionsAsync();
-  //     // setHasPermission(status === 'granted');
-  //     if (!hasPermission?.granted) {
-  //       await requestPermission();
-  //   };
-  // }
-  //   getCameraPermissions();
-  // }, [hasPermission]);
-
-  // const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
-  //   if (data) {
-  //     router.push(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
-  //     console.log(data, typeof(data))
-  //     return
-  //   };
-  //   setScanned(true);
-  // }
-
-  // if (hasPermission === null) {
-  //   return (
-  //     <View style={styles.container}>
-  //       <Text>Requesting camera permission...</Text>
-  //     </View>
-  //   );
-
-  // if (hasPermission?.granted) {
-  //   return (
-  //     <View style={styles.container}>
-  //       <Text>No access to camera</Text>
-  //     </View>
-  //   );
-  // }
-
   if (!hasPermission?.granted) {
     return (
       <View>
@@ -66,7 +31,7 @@ export default function VehicleScanner() {
         facing="back"
         onBarcodeScanned={({ data }: { data: string }) => {
           if (data) {
-            router.push(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
+            router.navigate(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
             console.log(data, typeof data);
             return;
           }

@@ -58,8 +58,8 @@ export default function VehicleForm() {
     setForm({ ...form, [key]: value });
   };
 
-  const [vehicle_number, setvehicle_number] = useState<string>()
-  const [vehicleNumber, setVehicleNumber] = useState<string | undefined>("");
+  const [vehicle_number, setvehicle_number] = useState<string>("")
+  const [vehicleNumber, setVehicleNumber] = useState<string>("");
 
   // const handleVehicleNumberBlur = () => {
   //   const formatted = formatVehicleNumber(vehicleNumber);
@@ -109,7 +109,7 @@ export default function VehicleForm() {
           {
           text: 'OK',
           onPress: () => {
-            router.replace('/dashboard'); 
+            router.navigate(`/qr-show?vehicle_number${encodeURIComponent(vehicle_number)}`); 
           }}]
         )
       } catch{

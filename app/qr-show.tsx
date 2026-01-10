@@ -1,71 +1,77 @@
 import { Directory, File, Paths } from 'expo-file-system';
-import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Sharing from "expo-sharing";
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-async function fetchImage() {
-  const url = 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=UP-02-AG-2354';
-const destination = new Directory(Paths.cache, 'png');
-try {
-  destination.create();
-  const output = await File.downloadFileAsync(url, destination);
-  console.log(output.exists); // true
-  console.log(output.uri); // path to the downloaded file, e.g., '${cacheDirectory}/pdfs/sample.pdf'
-} catch (error) {
-  console.error(error);
-}
-}
+
+// async function fetchImage() {
+//   const url = 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=UP-02-AG-2354';
+// const destination = new Directory(Paths.cache, 'png');
+// try {
+//   destination.create();
+//   const output = await File.downloadFileAsync(url, destination);
+//   console.log(output.exists); // true
+//   console.log(output.uri); // path to the downloaded file, e.g., '${cacheDirectory}/pdfs/sample.pdf'
+// } catch (error) {
+//   console.error(error);
+// }
+// }
 
 
 
 function QRShow() {
-  fetchImage()
-  // const downloadImage = async () => {
-  //   try {
-  //     const fileUri = FileSystem.documentDirectory + 'qr-code.png';
-  //     const { uri } = await FileSystem.downloadAsync(qrCodeUrl, fileUri);
-  //     setImageUrl(uri);
-  //     Alert.alert('Success', 'QR code downloaded successfully!');
-  //   } catch (error) {
-  //     console.error('Download error:', error);
-  //     Alert.alert('Error', 'Failed to download QR code');
-  //   }
-  // };
+  const params = useLocalSearchParams();
+  const vehicleId = Array.isArray(params.vehicle_number) ? params.vehicle_number[0] : params.vehicle_number;
+  const router = useRouter()
 
-//   useEffect(() => {
-//     fetchImage();
-//   }, []);
+  const [qrCodeUrl, setQrCodeUrl] = useState(
+    `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(vehicleId)}`,
+  )
+  
+  useEffect(() => {
+    async function DownloadImage() {
+      //const fileName = `qr-code-${Date.now()}.png`
+  
+      const destination = new Directory(Paths.cache, 'png');
+      try {
+        destination.create();
+        const output = await File.downloadFileAsync(qrCodeUrl, destination);
+        console.log(output.exists); // true
+        console.log(output.uri); // path to the downloaded file, e.g., '${cacheDirectory}/pdfs/sample.pdf'
+      } catch (error) {
+        Alert.alert("Failed to Download QR")
+        console.error(error);
+      }
+    }
+    DownloadImage()
+  }, [])
 
-//   const fetchImage = async () => {
-//     try {
-//       const response = await fetch('https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=UP-02-AG-2354');
-      
-//       // Convert response to blob
-//       return response.blob();
-      
-//       // Create a local URL for the blob
-//       //const localUrl = URL.createObjectURL(blob);
-      
-//       //setImageUrl(localUrl as any);
-//     } catch (error) {
-//       console.error('Error fetching image:', error);
-//     }
-//   };
-
-//   const downloadImageAndSetSource = async (imageUrl) => {
-//     const image = await fetchImage(imageUrl);
-//     setImageUrl(URL.createObjectURL(image));
-// }
-
-const URL = 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=UP-02-AG-2354'
+  async function ShareQR() {
+    try{
+      await Sharing.shareAsync(qrCodeUrl, {
+        mimeType: "image/png",
+        UTI: "com.compuserve.gif",
+      })
+    }catch(error) {
+      Alert.alert("Can't Share this QR")
+      console.log(error)
+    }
+   
+  }
+  
+ 
   return (
    <View style={styles.container}>
       <Text style={{fontSize: 40}}>Vehicle QR</Text>
-      {URL && (
-        <Image 
-          source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=UP-02-AG-2354' }}
-          style={styles.QR}
-        />
-      )}
+      {qrCodeUrl && (
+          <View style={styles.QR}>
+            <Image source={{ uri: qrCodeUrl }} style={styles.qrImage} resizeMode="contain" />
+
+            <Pressable style={styles.button} onPress={ShareQR}> Share QR </Pressable>
+            <Pressable style={styles.button} onPress={() => router.navigate("/dashboard")}> Back to Dashboard </Pressable>
+          </View>
+        )}
     </View>
   )
 }
@@ -79,8 +85,25 @@ const styles = StyleSheet.create({
   QR : {
     marginLeft : "auto",
     marginRight : "auto",
-    marginHorizontal : "auto"
+    marginHorizontal : "auto",
+    marginVertical : 40
 
-  }
+
+  },
+  qrImage: {
+    width: 300,
+    height: 300,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 })
 export default QRShow

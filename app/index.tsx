@@ -58,8 +58,6 @@ export default function Login() {
       };
       saveUser(data[0])
     }
-    console.log("data",data)
-    router.navigate(`/dashboard`)
 
   }
 

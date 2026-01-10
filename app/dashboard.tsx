@@ -172,7 +172,7 @@ return (
             <Text style={styles.buttonText}>Scan QR</Text>
         </Pressable>
 
-        <Pressable style={styles.button} onPress={() => router.navigate("/qr-show")}>
+        <Pressable style={styles.button} onPress={() => router.navigate("/new-vehicle")}>
             <Text style={styles.buttonText}> New Vehicle </Text>
         </Pressable>
     </View>
