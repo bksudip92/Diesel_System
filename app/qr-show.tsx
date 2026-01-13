@@ -33,15 +33,17 @@ function QRShow() {
     async function DownloadImage() {
       //const fileName = `qr-code-${Date.now()}.png`
   
-      const destination = new Directory(Paths.cache, 'png');
+      const destination = new Directory(Paths.cache, 'png')
       try {
         destination.create();
+        console.log(qrCodeUrl);
+        
         const output = await File.downloadFileAsync(qrCodeUrl, destination);
         console.log(output.exists); // true
         console.log(output.uri); // path to the downloaded file, e.g., '${cacheDirectory}/pdfs/sample.pdf'
       } catch (error) {
         Alert.alert("Failed to Download QR")
-        console.error(error);
+        console.error("download error",error);
       }
     }
     DownloadImage()
@@ -68,8 +70,12 @@ function QRShow() {
           <View style={styles.QR}>
             <Image source={{ uri: qrCodeUrl }} style={styles.qrImage} resizeMode="contain" />
 
-            <Pressable style={styles.button} onPress={ShareQR}> Share QR </Pressable>
-            <Pressable style={styles.button} onPress={() => router.navigate("/dashboard")}> Back to Dashboard </Pressable>
+            <Pressable style={styles.button} onPress={ShareQR}>
+               <Text style={styles.buttonText}> Share QR </Text>
+            </Pressable>
+            <Pressable style={styles.button} onPress={() => router.navigate("/(tabs)")}>
+               <Text style={styles.buttonText}> Back to Dashboard </Text>
+            </Pressable>
           </View>
         )}
     </View>
@@ -104,6 +110,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 })
 export default QRShow

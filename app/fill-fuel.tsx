@@ -51,7 +51,8 @@ export default function FillFuel() {
   const params = useLocalSearchParams<{ vehicleId: string | string[] }>();
 
   const vehicleId = Array.isArray(params.vehicleId) ? params.vehicleId[0] : params.vehicleId;
-
+ console.log("receiving", vehicleId);
+ 
   const [loading, setLoading] = useState<boolean>(true);
 
   const [lastFuelLog, setLastFuelLog] = useState<FuelLogWithVehicle | null>(null);
@@ -72,7 +73,7 @@ export default function FillFuel() {
         setLoading(false);
         return;
     }
-  }, [vehicleId]);
+  }, []);
   
   const fetchLastFuelLog = async () => {
     
@@ -89,8 +90,8 @@ export default function FillFuel() {
         .from("fuel_logs_with_vehicle")     // This is fetching View not Table
         .select("*")       
         .eq("vehicle_number", vehicleId )     // To make we get only specific vehicle logs
-        .limit(5)
-        .order('transaction_timestamp', { ascending: false });
+        .limit(2)
+        .order('meter_reading', { ascending: false });
     
       if (error) {
         Alert.alert("Can't able to Fetch data")  
@@ -124,7 +125,7 @@ export default function FillFuel() {
           if (Array.isArray(data) && data.length > 0) {
             setVehicleInfo(data[0]);
             setVehicleIdFK(data[0].vehicle_id)
-            // setVehicleIdFK(data[0].driverIdFK)
+            console.log("vehicle Info");
             
           } else {
             //setVehicleInfo(null);
@@ -177,6 +178,7 @@ export default function FillFuel() {
     }
 
     const previousReading = lastFuelLog?.meter_reading || 0;
+    console.log("prev",previousReading)
     if (reading <= previousReading) {
       Alert.alert('Error', 'New meter reading must be greater than previous reading');
       return;
@@ -202,7 +204,9 @@ export default function FillFuel() {
           filled_liters: filled,
           calculated_efficiency: efficiency,
           place : place,
-          transaction_timestamp: new Date().toISOString(),
+          transaction_date: new Date().toISOString().slice(0,10),
+          transaction_time : new Date().toLocaleTimeString().slice(16,24),
+          transaction_timestamp : new Date().toISOString(),
         });
 
       if (insertError) throw insertError;
@@ -210,7 +214,7 @@ export default function FillFuel() {
       Alert.alert('Success', 'Fuel log entry created successfully!', [
         {
           text: 'OK',
-          onPress: () => router.navigate("/dashboard"),
+          onPress: () => router.replace('/(tabs)'),
         },
       ]);
       
@@ -237,7 +241,7 @@ export default function FillFuel() {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Vehicle ID Not Found</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.navigate("/dashboard")}>
+        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>Go Back</Text>
         </TouchableOpacity>
       </View>

@@ -1,65 +1,79 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
-interface UserProfile {
-  name: string;
-  location: string;
+interface AuthUser {
+  id: string;
+  email: string;
 }
 
-export default function Login() {
+interface UserProfile {
+  id: string;
+  place: string;
+}
+
+interface CombinedUserInfo {
+  auth: AuthUser;
+  profile: UserProfile;
+}
+
+export default function Login(){
   const router = useRouter();
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('') 
+  const [ data , setData ] = useState<any>()
 
-  // useEffect(() => {
-  //   const { data , error } = await supabase
-  //     .storage
-  //     .from('Image')
-  //     .getPublicUrl("https://ekiedurclpnzdhwftmod.supabase.co/storage/v1/object/sign/Images/bk.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85YTVmYjQ5MS0xMWIzLTQ5ZmMtYWI1ZS1iZTJiNDJkNGZmMDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvYmsuanBnIiwiaWF0IjoxNzY3OTU0ODI1LCJleHAiOjIwODMzMTQ4MjV9.TV7HXhac6rJ_z9yeQjZBwyuiIx10bP4FosDLa6H1Iu0")
-
-  
-  //   return () => {
-  //     second
-  //   }
-  // }, [third])
-  
   const handleLogin = async () => {
-    if (!username || !password) {
+    if (!email || !password) {
       Alert.alert('Error', 'Please fill all fields')
       return
     }
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
-    
-    if (error || !data) {
-      Alert.alert('Login failed', 'Invalid username or password')
-      console.log(error)
-      return
-    }
-    if (data && data.length > 0) {
-      console.log("data",data[0].username,data[0].password)
-      router.navigate(`/dashboard`)
+    const { data , error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      });
 
-      const saveUser = async (user: UserProfile) => {
-        try {
-          const jsonValue = JSON.stringify(user);
-          await AsyncStorage.setItem('@user_profile', jsonValue);
-        } catch (e) {
-          console.error("Error saving user", e);
+    if (error) {
+      Alert.alert("Incorrect Username and Password")
+      }
+
+    else if(data){
+      setData(data)
+      getPlace()
+      }
+    }
+
+
+      // const saveUser = async (user: UserProfile) => {
+      //   try {
+      //     const jsonValue = JSON.stringify(user);
+      //     await AsyncStorage.setItem('@user_profile', jsonValue);
+      //   } catch (e) {
+      //     console.error("Error saving user", e);
+      //   }
+      // };
+      // saveUser(data[0])
+      const getPlace = async () => {
+        const { data , error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email',email)
+        .single()
+
+        if ( data ){
+          const place = data.place
+          router.navigate(`/(tabs)?place=${encodeURIComponent(place)}`)
+          console.log("User Profile response",data);
         }
-      };
-      saveUser(data[0])
+        if (!data && error){
+          Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
+          console.log(error);
+        }
     }
 
-  }
 
   return (
     <View style={{ padding: 40 }}>
@@ -73,8 +87,8 @@ export default function Login() {
 
       <TextInput
         placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
+        value={email}
+        onChangeText={setEmail}
         style={{
           borderWidth: 1,
           marginBottom: 15,

@@ -31,8 +31,8 @@ export default function VehicleScanner() {
         facing="back"
         onBarcodeScanned={({ data }: { data: string }) => {
           if (data) {
-            router.navigate(`/fill-fuel?vehicleId=${encodeURIComponent(data)}` as any);
-            console.log(data, typeof data);
+            router.navigate(`/fill-fuel?vehicleId=${encodeURIComponent(data)}`)
+            console.log("sending",data, typeof data);
             return;
           }
           setScanned(true);

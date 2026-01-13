@@ -13,6 +13,7 @@ import {
   View
 } from "react-native";
 
+
 /* ---------- Reusable Input Component ---------- */
 type InputProps = {
   label: string;
@@ -109,6 +110,7 @@ export default function VehicleForm() {
           {
           text: 'OK',
           onPress: () => {
+            console.log(vehicle_number, "new veh")
             router.navigate(`/qr-show?vehicle_number${encodeURIComponent(vehicle_number)}`); 
           }}]
         )
@@ -121,15 +123,17 @@ export default function VehicleForm() {
 return (
   <KeyboardAvoidingView
     style={{ flex: 1 }}
-     behavior={Platform.OS === "ios" ? "padding" : undefined}
+     behavior={Platform.OS === "ios" ? "height" : undefined}
   >
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scrollView} >
+      <View style={styles.container}>
       <Text style={styles.title}>Add Vehicle</Text>
 
       <Text style={styles.label}>
         Vehicle Number
       </Text>
       <TextInput
+        placeholder="Vehicle Number"
         style={styles.input}
         value={vehicleNumber || undefined }
         onChangeText={setVehicleNumber }
@@ -175,6 +179,7 @@ return (
         <Text style={styles.buttonText}>Save Vehicle</Text>
       </TouchableOpacity>
       <KeyboardAvoidingView/>
+      </View>
     </ScrollView>
   </KeyboardAvoidingView>
 );
@@ -182,9 +187,13 @@ return (
 
 /* ---------- Styles ---------- */
 const styles = StyleSheet.create({
+  scrollView : {
+    height : 200
+  },
   container: {
     padding: 16,
     paddingBottom: 40,
+
   },
   title: {
     fontSize: 22,
@@ -192,7 +201,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inputGroup: {
-    marginBottom: 14,
+    marginBottom: 25,
   },
   label: {
     fontSize: 14,
