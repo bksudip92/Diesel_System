@@ -1,21 +1,24 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface MenuItem {
   id: number;
-  month_name : string;
-  total_diesel : number | string ,
-  total_fills : number | string
+  month_name: string,
+  total_diesel : number , 
+  total_fills : number , 
+  first_month : number ,
+  last_month : number
 }
 
 // Define the MenuListItem props type
 interface MenuListItemProps {
   item: MenuItem;
+  onPress: (itemId: number) => void;
 }
 
-const MenuListItem: React.FC<MenuListItemProps> = ({ item }) => (
-  <View style={styles.listItem}>
+const MenuListItem : React.FC<MenuListItemProps>  = ({ item, onPress }) => (
+  <Pressable onPress={() => onPress(item.id)} style={styles.listItem}>
+    <View>
   <View style={styles.textContainer}>
 
     <Text style={styles.itemTitle}>{item.month_name}</Text>
@@ -30,23 +33,22 @@ const MenuListItem: React.FC<MenuListItemProps> = ({ item }) => (
       ) : null}
     </View>
   </View>
-
-  {/* Icon stays centered on the right */}
-  <Icon name="chevron-forward" size={24} color="#C7C7CC" />
-</View>
+  </View>
+  </Pressable>
 );
 
 interface ListMenuProps {
   menuItems: MenuItem[];
+  handleItemPress: (itemId: number) => void;
 }
 
-function ListMenu({ menuItems,}: ListMenuProps) {
+function ListMenu({ menuItems, handleItemPress }: ListMenuProps) {
   return (
-    <View style={styles.textContainer}>
+    <View style={styles.container}>
       <FlatList
         data={Array.isArray(menuItems) ? menuItems : []}
         renderItem={({ item }) => (
-          <MenuListItem item={item} />
+          <MenuListItem item={item} onPress={handleItemPress} />
         )}
         keyExtractor={(item) => item.id.toString()}
         scrollEnabled={false}
@@ -57,7 +59,13 @@ function ListMenu({ menuItems,}: ListMenuProps) {
 }
 
 const styles = StyleSheet.create({
-  listItem: {
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+   listItem: {
     flexDirection: 'row',       // Align Text Block and Icon horizontally
     alignItems: 'center',       // Vertically center the icon
     justifyContent: 'space-between', 

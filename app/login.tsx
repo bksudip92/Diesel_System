@@ -23,6 +23,9 @@ export default function Login(){
   const router = useRouter();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('') 
+  const [user, setUser] = useState(null);
+    const [session, setSession] = useState(null);
+    const [loading, setLoading] = useState(true);
   const [ data , setData ] = useState<any>()
 
   const handleLogin = async () => {
@@ -42,37 +45,27 @@ export default function Login(){
 
     else if(data){
       setData(data)
-      getPlace()
+      // getPlace()
       }
     }
+ 
+    //   const getPlace = async () => {
+    //     const { data , error } = await supabase
+    //     .from('users')
+    //     .select('*')
+    //     .eq('email',email)
+    //     .single()
 
-
-      // const saveUser = async (user: UserProfile) => {
-      //   try {
-      //     const jsonValue = JSON.stringify(user);
-      //     await AsyncStorage.setItem('@user_profile', jsonValue);
-      //   } catch (e) {
-      //     console.error("Error saving user", e);
-      //   }
-      // };
-      // saveUser(data[0])
-      const getPlace = async () => {
-        const { data , error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email',email)
-        .single()
-
-        if ( data ){
-          const place = data.place
-          router.navigate(`/(tabs)?place=${encodeURIComponent(place)}`)
-          console.log("User Profile response",data);
-        }
-        if (!data && error){
-          Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
-          console.log(error);
-        }
-    }
+    //     if ( data ){
+    //       const place = data.place
+    //       router.navigate(`/(tabs)?place=${encodeURIComponent(place)}`)
+    //       console.log("User Profile response",data);
+    //     }
+    //     if (!data && error){
+    //       Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
+    //       console.log(error);
+    //     }
+    // }
 
 
   return (

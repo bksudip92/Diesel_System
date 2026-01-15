@@ -111,7 +111,7 @@ export default function VehicleForm() {
           text: 'OK',
           onPress: () => {
             console.log(vehicle_number, "new veh")
-            router.navigate(`/qr-show?vehicle_number${encodeURIComponent(vehicle_number)}`); 
+            router.navigate(`/qr-show?vehicle_number=${encodeURIComponent(vehicle_number)}`); 
           }}]
         )
       } catch{

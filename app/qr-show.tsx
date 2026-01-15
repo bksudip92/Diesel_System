@@ -23,11 +23,13 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 function QRShow() {
   const params = useLocalSearchParams();
   const vehicleId = Array.isArray(params.vehicle_number) ? params.vehicle_number[0] : params.vehicle_number;
+  console.log("receving",vehicleId);
   const router = useRouter()
 
   const [qrCodeUrl, setQrCodeUrl] = useState(
     `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(vehicleId)}`,
   )
+  console.log(qrCodeUrl);
   
   useEffect(() => {
     async function DownloadImage() {
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
