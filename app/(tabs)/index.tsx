@@ -1,5 +1,5 @@
 import { useIsFocused } from '@react-navigation/native';
-import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,8 +33,6 @@ export default function Dashboard() {
 
   const [logs, setLogs] = useState<FuelLog[]>([]);
   const [loading, setLoading] = useState(false)
-  const [ verified , setverified ] = useState(false)
-  const [ email , setemail] = useState()
 
 
   useFocusEffect(
@@ -44,7 +42,6 @@ export default function Dashboard() {
       fetchLogs()
       console.log("Hello, I'm focused!");
       setLoading(true)
-      restoreSession()
       // Return function is invoked whenever the route gets out of focus.
       return () => {
         active = false
@@ -52,56 +49,6 @@ export default function Dashboard() {
       };
     }, []),
    );
-
-  const restoreSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    // setSession(session);
-    // setUser(session?.user ?? null);
-    // setLoading(false);
-    // if (loading) {
-    //   return (
-    //     <View style={styles.centerContainer}>
-    //       <ActivityIndicator size="large" color="#2563eb" />
-    //       <Text style={styles.loadingText}>Loading fuel log data...</Text>
-    //     </View>
-    //   );
-    // }
-  
-    if(session?.user.user_metadata.email_verified){
-      getPlace()
-      //setloading(false)
-      setverified(true)
-      setemail(session?.user.email as any)
-      console.log("Email : ", email );
-      
-      // {<Redirect href={'/(tabs)'}/>}
-    }
-    else {
-      <Redirect href={'/login'}/>
-      console.log('redirect function');
-      
-    }
-    
-  };
-
-  const getPlace = async () => {
-    const { data , error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email',email)
-    .single()
-
-    if ( data ){
-      const place = data.place
-      router.replace(`/(tabs)?place=${encodeURIComponent(place)}`)
-      console.log("User Profile response",data);
-    }
-    if (!data && error){
-      Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
-      console.log(error);
-      // router.replace('/login');
-    }
-  }
 
   const fetchLogs = async () => {
 
@@ -160,7 +107,6 @@ export default function Dashboard() {
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-// 4. The Card Component
 const renderItem = ({ item }: { item: FuelLog }) => {
   const vehicleNumber =
     typeof item.vehicles === 'string'
@@ -205,10 +151,6 @@ const renderItem = ({ item }: { item: FuelLog }) => {
     </View>
   );
 };
-
-// useEffect(() => { /// this saved us from multiple re-renders.
-//   fetchLogs();
-// }, []);
 
 return (
   <SafeAreaView style={styles.container}>

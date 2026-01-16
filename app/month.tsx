@@ -21,6 +21,12 @@ interface MenuListItemProps {
 
 function Months() {
   const now = new Date();
+
+  const FirstDatePrev = new Date(now.getFullYear(), now.getMonth() - 1, 2).toISOString().slice(0, 10);
+  console.log("first",new Date(FirstDatePrev),typeof(FirstDatePrev));
+  
+  const LastDatePrev = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  
   const router = useRouter()
   const [ data , setData] = useState<MonthItem>()
   // const [ canbeChecked , setcanbeChecked ] = useState(false)
@@ -47,9 +53,7 @@ function Months() {
   const RefreshData = async () => {
     const prevDate = new Date(now.getFullYear(), now.getMonth(),1)
     if(now > prevDate ) {
-      const FirstDatePrev = new Date(now.getFullYear(), now.getMonth() - 1, 2).toISOString().slice(0, 10);
-      const LastDatePrev = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  
+      
       let total_diesel : number = 0
       let total_fills : number = 0
   

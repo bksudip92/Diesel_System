@@ -33,7 +33,10 @@ export default function VehicleScanner() {
           if (data) {
             router.navigate(`/fill-fuel?vehicleId=${encodeURIComponent(data)}`)
             console.log("sending",data, typeof data);
-            return;
+          }
+          else {
+            
+            router.navigate('/type_vehicleNumber')
           }
           setScanned(true);
         }}

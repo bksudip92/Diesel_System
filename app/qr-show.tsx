@@ -35,11 +35,14 @@ function QRShow() {
     async function DownloadImage() {
       //const fileName = `qr-code-${Date.now()}.png`
   
-      const destination = new Directory(Paths.cache, 'png')
+      const destination = new Directory(Paths.cache, 'Vehicle_QRCodes')
+       //const fileUri = `${FileSystem.e}${vehicleId}`
       try {
         destination.create();
-        console.log(qrCodeUrl);
-        
+        console.log(qrCodeUrl , "destination", destination);
+
+        console.log("before download",qrCodeUrl);
+
         const output = await File.downloadFileAsync(qrCodeUrl, destination);
         console.log(output.exists); // true
         console.log(output.uri); // path to the downloaded file, e.g., '${cacheDirectory}/pdfs/sample.pdf'
@@ -48,6 +51,8 @@ function QRShow() {
         console.error("download error",error);
       }
     }
+
+   // ShareQR()
     DownloadImage()
   }, [])
 
@@ -55,7 +60,6 @@ function QRShow() {
     try{
       await Sharing.shareAsync(qrCodeUrl, {
         mimeType: "image/png",
-        UTI: "com.compuserve.gif",
       })
     }catch(error) {
       Alert.alert("Can't Share this QR")
@@ -63,7 +67,6 @@ function QRShow() {
     }
    
   }
-  
  
   return (
    <View style={styles.container}>
@@ -75,7 +78,7 @@ function QRShow() {
             <Pressable style={styles.button} onPress={ShareQR}>
                <Text style={styles.buttonText}> Share QR </Text>
             </Pressable>
-            <Pressable style={styles.button} onPress={() => router.navigate("/(tabs)")}>
+            <Pressable style={styles.button} onPress={() => router.replace("/(tabs)")}>
                <Text style={styles.buttonText}> Back to Dashboard </Text>
             </Pressable>
           </View>
@@ -104,6 +107,7 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    marginTop : 15,
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderWidth: 1,
@@ -114,7 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#000000',
+    backgroundColor: '#fffff0',
     fontSize: 16,
     fontWeight: '600',
   },
