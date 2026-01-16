@@ -1,4 +1,6 @@
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { supabase } from '@/lib/supabase';
+import { RouteProp, useNavigation } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -33,15 +35,17 @@ type EditScreenRouteProp = RouteProp<RootStackParamList, 'VehicleEdit'>;
 
 export default function VehicleEditScreen() {
   const navigation = useNavigation();
-  const route = useRoute<EditScreenRouteProp>();
-  const { vehicle } = route.params;
+  const params = useLocalSearchParams();
+  const vehicle  = params.vehicle;
+  const [ vehicleData , setVehicleData ] = useState<VehicleData>()
   console.log(vehicle);
   
   // --- Local State for Form Fields ---
-  const [meterReading, setMeterReading] = useState(String(vehicle.current_meter_reading));
-  const [ownerName, setOwnerName] = useState(vehicle.owner_name || '');
-  const [department, setDepartment] = useState(vehicle.department || '');
-  const [limit, setLimit] = useState(String(vehicle.permitted_liters));
+  const [ vehicle_number, setvehicle_number ] = useState(vehicle)
+  const [meterReading, setMeterReading] = useState(String(vehicleData?.current_meter_reading) || '');
+  const [ownerName, setOwnerName] = useState(vehicleData?.owner_name || '');
+  const [department, setDepartment] = useState(vehicleData?.department || '');
+  const [limit, setLimit] = useState(String(vehicleData?.permitted_liters) || '');
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -49,16 +53,28 @@ export default function VehicleEditScreen() {
   const handleSave = async () => {
     setIsSaving(true);
 
-    // 1. Prepare the payload
-    const updatedData = {
-      vehicle_id: vehicle.vehicle_id,
-      current_meter_reading: parseInt(meterReading),
-      owner_name: ownerName,
-      department: department,
-      permitted_liters: parseInt(limit),
-    };
+    const { error: UpsertError } = await supabase
+    .from('vehicles')
+    .update({
+      current_meter_reading : meterReading ,
+      owner_name : ownerName , 
+      department : department,
+      permitted_liters : limit
+    })
+    .eq('vehicle_number',vehicle_number)
 
-    console.log("Saving to Database:", updatedData);
+      if (UpsertError) {
+        Alert.alert("Unable to Insert Data. Please Try Again")
+        console.error("Upsert Error:", UpsertError);
+        throw UpsertError;
+      }
+
+    else {
+      Alert.alert("No new Data to Fetch")
+    }
+
+
+    console.log("Saving to Database");
 
     // 2. Simulate API Call (e.g., Supabase or Axios)
     setTimeout(() => {
@@ -74,8 +90,14 @@ export default function VehicleEditScreen() {
       
       {/* Read-Only Header */}
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>{vehicle.vehicle_name}</Text>
-        <Text style={styles.headerSubtitle}>{vehicle.vehicle_number}</Text>
+        <Text style={styles.headerTitle}>
+          {vehicle_number 
+            ? `${vehicle_number}` 
+            : "Vehicle Details"}
+        </Text>
+        <Text style={styles.headerSubtitle}>
+          {vehicleData?.owner_name ? `Owner: ${vehicleData.owner_name}` : ""}
+        </Text>
       </View>
 
       {/* Form Fields */}
@@ -84,7 +106,7 @@ export default function VehicleEditScreen() {
         <Text style={styles.label}>Current Meter Reading (km)</Text>
         <TextInput
           style={styles.input}
-          value={meterReading}
+          
           onChangeText={setMeterReading}
           keyboardType="numeric"
           placeholder="e.g. 12000"
@@ -93,7 +115,7 @@ export default function VehicleEditScreen() {
         <Text style={styles.label}>Owner Name</Text>
         <TextInput
           style={styles.input}
-          value={ownerName}
+          
           onChangeText={setOwnerName}
           placeholder="Enter owner name"
         />
@@ -101,7 +123,7 @@ export default function VehicleEditScreen() {
         <Text style={styles.label}>Department / Organization</Text>
         <TextInput
           style={styles.input}
-          value={department}
+          
           onChangeText={setDepartment}
           placeholder="e.g. Construction"
         />
@@ -109,7 +131,7 @@ export default function VehicleEditScreen() {
         <Text style={styles.label}>Fuel Limit (Liters)</Text>
         <TextInput
           style={styles.input}
-          value={limit}
+          
           onChangeText={setLimit}
           keyboardType="numeric"
           placeholder="e.g. 200"
@@ -141,9 +163,9 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    marginBottom: 20,
+    marginBottom: 10,
   },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#333' },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#333', textAlign: 'center' },
   headerSubtitle: { fontSize: 16, color: '#666', marginTop: 4 },
   
   formSection: { paddingHorizontal: 20 },

@@ -23,9 +23,6 @@ export default function Login(){
   const router = useRouter();
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('') 
-  const [user, setUser] = useState(null);
-    const [session, setSession] = useState(null);
-    const [loading, setLoading] = useState(true);
   const [ data , setData ] = useState<any>()
 
   const handleLogin = async () => {
@@ -44,6 +41,8 @@ export default function Login(){
       }
 
     else if(data){
+      console.log(data);
+      
       setData(data)
       // getPlace()
       }

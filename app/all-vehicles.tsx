@@ -5,7 +5,7 @@ import { Alert, FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } fr
 
 // 1. Define the interface matching your JSON data exactly
 interface VehicleData { 
-  current_meter_reading: number;
+  current_meter_reading: number; 
   department: string | null;
   organization: string | null;
   owner_name: string | null;
@@ -18,7 +18,7 @@ interface VehicleData {
   vehicle_type: string;
 }
 
-const router = useRouter() 
+const router = useRouter()  
 
 export default function VehicleListScreen() {
 
@@ -34,9 +34,6 @@ export default function VehicleListScreen() {
         style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} 
         onPress={() => handleItemPress()}
       >
-      <View style={styles.card}>
-        {/* --- Header Row --- */}
-        <Pressable onPress={() => router.navigate(`/edit-vehicle?vehicle`)}>
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.label}>Vehicle No.</Text>
@@ -47,7 +44,6 @@ export default function VehicleListScreen() {
             <Text style={styles.vehicleName}>{item.vehicle_name}</Text>
           </View>
         </View>
-        </Pressable>
         {/* --- Divider --- */}
         <View style={styles.divider} />
   
@@ -77,7 +73,6 @@ export default function VehicleListScreen() {
             </Text>
           </View>
         </View>
-      </View>
       </Pressable>
     );
   };
@@ -101,7 +96,7 @@ useEffect(() => {
   }
 
   const onCardClick = async (data : VehicleData) => {
-    router.push(`/edit-vehicle?vehicle=${data?.vehicle_number}`);
+    router.push(`/edit-vehicle?vehicle=${data.vehicle_number}`);
   }
   return (
     <View style={styles.container}>
