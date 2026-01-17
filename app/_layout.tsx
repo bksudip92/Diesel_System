@@ -1,8 +1,8 @@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { Stack, useRootNavigationState, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { Alert, StyleSheet } from 'react-native';
 
 export default function RootLayout() {
 
@@ -15,31 +15,13 @@ export default function RootLayout() {
   const router = useRouter()
 
   function useProtectedRoute() {
-    const [isNavigationReady, setNavigationReady] = useState(false);
 
      useEffect(() => {
-      setNavigationReady(navState as any)
-      console.log("checking navigation state",isNavigationReady);
       
-      if (!isNavigationReady) {
+      if (!navState?.key) {
+        console.log("navigation state",navState);
+        
          return;
-      }
-      const getPlace = async () => {
-        const { data , error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email',email)
-        .single()
-    
-        if ( data ){
-          const place = data.place
-          router.replace(`/(tabs)?place=${encodeURIComponent(place)}`)
-          console.log("User Profile response",data);
-        }
-        if (!data && error){
-          // Alert.alert("Can't find User's Place, Please fill details or Register Yourself") 
-          console.log(error);
-        }
       }
     
       if(session?.user.user_metadata.email_verified){
@@ -47,15 +29,31 @@ export default function RootLayout() {
         //setloading(false)
         // setverified(true)
         // setemail(session?.user.email as any)
-        console.log("Checking Is user verified", email );
       }
       else {
         //router.push('/login')
         console.log('redirected to login');
       }
-  },[email , session ])
+  },[email , session , navState ])
     }
     useProtectedRoute()
+
+    const getPlace = async () => {
+      const { data , error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email',email)
+      .single()
+  
+      if ( data ){
+        const place = data.place
+        router.replace(`/(tabs)?place=${encodeURIComponent(place)}`)
+      }
+      if (!data && error){
+        Alert.alert("Can't find User's Place, Please fill details or Register Yourself") 
+        console.log(error);
+      }
+    }
    
   return (
     <Stack>

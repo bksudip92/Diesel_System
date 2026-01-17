@@ -37,34 +37,36 @@ export default function Login(){
       });
 
     if (error) {
+      console.log(error);
+      
       Alert.alert("Incorrect Username and Password")
       }
 
-    else if(data){
+    else if(!error){
+      setData(data)
       console.log(data);
       
-      setData(data)
-      // getPlace()
+      getPlace()
       }
     }
  
-    //   const getPlace = async () => {
-    //     const { data , error } = await supabase
-    //     .from('users')
-    //     .select('*')
-    //     .eq('email',email)
-    //     .single()
+      const getPlace = async () => {
+        const { data , error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email',email)
+        .single()
 
-    //     if ( data ){
-    //       const place = data.place
-    //       router.navigate(`/(tabs)?place=${encodeURIComponent(place)}`)
-    //       console.log("User Profile response",data);
-    //     }
-    //     if (!data && error){
-    //       Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
-    //       console.log(error);
-    //     }
-    // }
+        if ( data ){
+          const place = data.place
+          router.navigate(`/(tabs)?place=${encodeURIComponent(place)}`)
+          console.log("User Profile response",data);
+        }
+        if (!data && error){
+          Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
+          console.log(error);
+        }
+    }
 
 
   return (

@@ -64,7 +64,8 @@ export default function Dashboard() {
     //   return;
     // }
     const place = Array.isArray(params.place) ? params.place[0] : params.place;
-
+    console.log("receiving place at index",place);
+    
     const { data, error } = await supabase
       .from('fuel_logs')
       .select(`id,
@@ -85,6 +86,8 @@ export default function Dashboard() {
       return;
     }
     if (data) {
+        console.log("getting place specific logs",data); 
+        
         const flattened: FuelLogFlat[] = (data ?? []).map((row) => ({
         id: row.id,
         filled_liters: row.filled_liters,

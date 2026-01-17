@@ -23,7 +23,6 @@ function Months() {
   const now = new Date();
 
   const FirstDatePrev = new Date(now.getFullYear(), now.getMonth() - 1, 2).toISOString().slice(0, 10);
-  console.log("first",new Date(FirstDatePrev),typeof(FirstDatePrev));
   
   const LastDatePrev = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   
@@ -43,7 +42,6 @@ function Months() {
 
     if (data) {
       setData(data as any)
-      console.log(data);
     }
     else if (error){
       Alert.alert('Unable to Fetch Months')
@@ -72,7 +70,6 @@ function Months() {
         if (data && data.length > 0) {
           total_diesel = data[0].sum ?? 0;  
           total_fills = data[0].count ?? 0;
-          console.log("get data");
           
         }
       
