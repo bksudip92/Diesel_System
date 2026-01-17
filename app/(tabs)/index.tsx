@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused } from '@react-navigation/native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -30,9 +31,12 @@ export default function Dashboard() {
   const router = useRouter();
   const params = useLocalSearchParams()
   const refresh = useIsFocused()
+  // const place = usePlace()
 
   const [logs, setLogs] = useState<FuelLog[]>([]);
   const [loading, setLoading] = useState(false)
+  const [ place , setPlace ] = useState()
+
 
 
   useFocusEffect(
@@ -52,18 +56,17 @@ export default function Dashboard() {
 
   const fetchLogs = async () => {
 
-    // let UserInfo = {} as UserProfile
-    // try {
-    //   const jsonValue = await AsyncStorage.getItem('@user_profile');
-    //    UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
-    //    console.log(UserInfo);
-       
-    // } catch (e) {
-    //   console.error("Error reading user", e);
-    //   Alert.alert('Error', 'Failed to read user info. Please log in again.');
-    //   return;
-    // }
-    const place = Array.isArray(params.place) ? params.place[0] : params.place;
+    let UserInfo = {} as UserProfile
+    try {
+      const jsonValue = await AsyncStorage.getItem('user_info');
+       UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
+       console.log("retrieved from storage",UserInfo);
+       setPlace(UserInfo.place as any)
+    } catch (e) {
+      console.error("Error reading user", e);
+      Alert.alert('Error', 'Failed to read user info. Please log in again.');
+      return;
+    }
     console.log("receiving place at index",place);
     
     const { data, error } = await supabase

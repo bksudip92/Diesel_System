@@ -6,7 +6,9 @@ interface MenuItem {
   id: number;
   month_name : string;
   total_diesel : number | string ,
-  total_fills : number | string
+  total_fills : number | string , 
+  first_date : number, 
+  last_date : number
 }
 
 // Define the MenuListItem props type
