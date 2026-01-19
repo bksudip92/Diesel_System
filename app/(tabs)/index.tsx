@@ -27,6 +27,8 @@ interface UserProfile {
   place : string ;
 }
 
+let UserInfo = {} as UserProfile
+
 export default function Dashboard() {
   const router = useRouter();
   const params = useLocalSearchParams()
@@ -37,13 +39,65 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false)
   const [ place , setPlace ] = useState()
 
+  const FetchDetails = async() => {
+    try {
+        const jsonValue = await AsyncStorage.getItem('user_info');
+        UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
+        console.log("retrieved from storage",UserInfo);
 
+        const fetchedPlace = UserInfo.place || '';
+
+        setPlace(fetchedPlace as any)
+        console.log('before fetch',place , fetchedPlace);
+        
+      const { data, error } = await supabase
+      .from('fuel_logs')
+      .select(`id,
+              filled_liters,
+              calculated_efficiency,
+              calculated_distance,
+              transaction_timestamp,
+              place,
+              vehicles(vehicle_number)`)
+      .eq("place", fetchedPlace )
+      .order('transaction_timestamp', { ascending: false })
+      .limit(10); 
+
+      if (error) {
+        console.log('Error fetching logs:', error);
+        Alert.alert('Please Refresh, Unable to get data')
+        return;
+      }
+      if (data) {
+          console.log("getting place specific logs",data,"place",place, "variable", fetchedPlace); 
+          
+          const flattened: FuelLogFlat[] = (data ?? []).map((row) => ({
+          id: row.id,
+          filled_liters: row.filled_liters,
+          calculated_efficiency: row.calculated_efficiency,
+          transaction_timestamp: row.transaction_timestamp,
+          place : row.place,
+          
+          vehicles: Array.isArray(row.vehicles)
+            ? ((row.vehicles[0] as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle')
+            : ((row.vehicles as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle'),
+        }));
+        // Cast to any to satisfy setLogs typing, or preferably update state and types
+        setLogs(flattened as any);
+        setLoading(false)
+      }
+    }catch (e) {
+      console.error("Error reading user", e);
+      Alert.alert('Error', 'Failed to read user info. Please log in again.');
+      return;
+    }
+  }
 
   useFocusEffect(
     // Callback should be wrapped in `React.useCallback` to avoid running the effect too often.
     useCallback(() => {
       let active = true
-      fetchLogs()
+      FetchDetails()
       console.log("Hello, I'm focused!");
       setLoading(true)
       // Return function is invoked whenever the route gets out of focus.
@@ -54,60 +108,6 @@ export default function Dashboard() {
     }, []),
    );
 
-  const fetchLogs = async () => {
-
-    let UserInfo = {} as UserProfile
-    try {
-      const jsonValue = await AsyncStorage.getItem('user_info');
-       UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
-       console.log("retrieved from storage",UserInfo);
-       setPlace(UserInfo.place as any)
-    } catch (e) {
-      console.error("Error reading user", e);
-      Alert.alert('Error', 'Failed to read user info. Please log in again.');
-      return;
-    }
-    console.log("receiving place at index",place);
-    
-    const { data, error } = await supabase
-      .from('fuel_logs')
-      .select(`id,
-              filled_liters,
-              calculated_efficiency,
-              calculated_distance,
-              transaction_timestamp,
-              place,
-              vehicles(vehicle_number)`)
-      .eq("place", place )
-      .order('transaction_timestamp', { ascending: false })
-      .limit(10);
-      
-      
-    if (error) {
-      console.log('Error fetching logs:', error);
-      Alert.alert('Please Refresh, Unable to get data')
-      return;
-    }
-    if (data) {
-        console.log("getting place specific logs",data); 
-        
-        const flattened: FuelLogFlat[] = (data ?? []).map((row) => ({
-        id: row.id,
-        filled_liters: row.filled_liters,
-        calculated_efficiency: row.calculated_efficiency,
-        transaction_timestamp: row.transaction_timestamp,
-        place : row.place,
-        
-        vehicles: Array.isArray(row.vehicles)
-          ? ((row.vehicles[0] as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle')
-          : ((row.vehicles as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle'),
-      }));
-      // Cast to any to satisfy setLogs typing, or preferably update state and types
-      setLogs(flattened as any);
-      setLoading(false)
-    }
-  };
-    
  const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -157,6 +157,9 @@ const renderItem = ({ item }: { item: FuelLog }) => {
     </View>
   );
 };
+
+
+
 
 return (
   <SafeAreaView style={styles.container}>
@@ -298,4 +301,4 @@ dateText: {
   color: '#94a3b8',
   textAlign: 'right',
 },
-});
+})

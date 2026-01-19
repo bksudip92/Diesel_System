@@ -12,7 +12,7 @@ export default function AboutScreen() {
       }
       else if (!AuthError){
         Alert.alert("Success", "Logout Successful", [
-          { text: "OK", onPress: () => router.replace('/login') }
+          { text: "OK", onPress: () => router.replace('/(auth)') }
         ])
       }
   }

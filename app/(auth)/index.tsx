@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { setItemAsync } from 'expo-secure-store';
+
 import { useState } from 'react';
 import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface AuthUser {
   id: string;
@@ -38,19 +40,17 @@ export default function Login(){
 
     if (error) {
       console.log(error);
-      
       Alert.alert("Incorrect Username and Password")
       }
 
     else if(!error){
       setData(data)
-      console.log(data);
-      
+      console.log("from supabase in login", data);
       getPlace()
       }
     }
  
-      const getPlace = async () => {
+    const getPlace = async () => {
         const { data , error } = await supabase
         .from('users')
         .select('*')
@@ -58,9 +58,13 @@ export default function Login(){
         .single()
 
         if ( data ){
-          const place = data.place
-          router.navigate(`/(tabs)?place=${encodeURIComponent(place)}`)
-          console.log("User Profile response",data);
+          try {
+              await setItemAsync( 'user_info', JSON.stringify(data));
+              router.navigate(`/(tabs)`)
+              console.log("user_info saved",data);
+            } catch (e) {
+              console.error("Failed to save", e);
+            }
         }
         if (!data && error){
           Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
