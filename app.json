@@ -51,6 +51,14 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to save QR codes to your gallery.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save QR codes to your gallery.",
+          "isAccessMediaLocationEnabled": true
+        }
       ]
     ],
     "experiments": {
