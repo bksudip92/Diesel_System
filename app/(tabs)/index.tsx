@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/context/AuthProvider';
 import { useIsFocused } from '@react-navigation/native';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,34 +22,23 @@ export interface FuelLogFlat{
   place : string,
   vehicles: string ;
 }
-interface UserProfile {
-  name: string;
-  place : string ;
-}
-
-let UserInfo = {} as UserProfile
 
 export default function Dashboard() {
   const router = useRouter();
-  const params = useLocalSearchParams()
   const refresh = useIsFocused()
-  // const place = usePlace()
+  const { profile } = useAuth();
 
   const [logs, setLogs] = useState<FuelLog[]>([]);
   const [loading, setLoading] = useState(false)
-  const [ place , setPlace ] = useState()
 
   const FetchDetails = async() => {
+    const userPlace = profile?.place || '';
+    if (!userPlace) {
+      console.warn('No user place found');
+      return;
+    }
+
     try {
-        const jsonValue = await AsyncStorage.getItem('user_info');
-        UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
-        console.log("retrieved from storage",UserInfo);
-
-        const fetchedPlace = UserInfo.place || '';
-
-        setPlace(fetchedPlace as any)
-        console.log('before fetch',place , fetchedPlace);
-        
       const { data, error } = await supabase
       .from('fuel_logs')
       .select(`id,
@@ -59,7 +48,7 @@ export default function Dashboard() {
               transaction_timestamp,
               place,
               vehicles(vehicle_number)`)
-      .eq("place", fetchedPlace )
+      .eq("place", userPlace )
       .order('transaction_timestamp', { ascending: false })
       .limit(10); 
 
@@ -69,26 +58,22 @@ export default function Dashboard() {
         return;
       }
       if (data) {
-          console.log("getting place specific logs",data,"place",place, "variable", fetchedPlace); 
-          
-          const flattened: FuelLogFlat[] = (data ?? []).map((row) => ({
+          const flattened: FuelLogFlat[] = data.map((row) => ({
           id: row.id,
           filled_liters: row.filled_liters,
           calculated_efficiency: row.calculated_efficiency,
           transaction_timestamp: row.transaction_timestamp,
           place : row.place,
-          
           vehicles: Array.isArray(row.vehicles)
             ? ((row.vehicles[0] as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle')
             : ((row.vehicles as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle'),
         }));
-        // Cast to any to satisfy setLogs typing, or preferably update state and types
         setLogs(flattened as any);
         setLoading(false)
       }
     }catch (e) {
-      console.error("Error reading user", e);
-      Alert.alert('Error', 'Failed to read user info. Please log in again.');
+      console.error("Error fetching logs", e);
+      Alert.alert('Error', 'Failed to load data.');
       return;
     }
   }
