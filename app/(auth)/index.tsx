@@ -1,128 +1,184 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { setItemAsync } from 'expo-secure-store';
-
 import { useState } from 'react';
-import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { supabase } from '../../lib/supabase';
 
-interface AuthUser {
-  id: string;
-  email: string;
-}
-
-interface UserProfile {
-  id: string;
-  place: string;
-}
-
-interface CombinedUserInfo {
-  auth: AuthUser;
-  profile: UserProfile;
-}
-
-export default function Login(){
+export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('') 
-  const [ data , setData ] = useState<any>()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill all fields')
-      return
+    setErrorMsg(null);
+
+    if (!email.trim()) {
+      setErrorMsg('Please enter your email');
+      return;
+    }
+    if (!password) {
+      setErrorMsg('Please enter your password');
+      return;
     }
 
-    const { data , error } = await supabase.auth.signInWithPassword({
-      email,
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
       password,
-      });
+    });
 
     if (error) {
-      console.log(error);
-      Alert.alert("Incorrect Username and Password")
-      }
-
-    else if(!error){
-      setData(data)
-      console.log("from supabase in login", data);
-      getPlace()
-      }
-    }
- 
-    const getPlace = async () => {
-        const { data , error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email',email)
-        .single()
-
-        if ( data ){
-          try {
-              await setItemAsync( 'user_info', JSON.stringify(data));
-              router.navigate(`/(tabs)`)
-              console.log("user_info saved",data);
-            } catch (e) {
-              console.error("Failed to save", e);
-            }
-        }
-        if (!data && error){
-          Alert.alert("Can't find User's Place, Please fill details or Register Yourself")
-          console.log(error);
-        }
+      console.error('Login error:', error);
+      setErrorMsg('Invalid email or password');
+      setLoading(false);
+      return;
     }
 
+    // Auth state listener in AuthProvider fetches profile + navigates
+    // Navigation handled by layout via session detection
+    router.replace('/(tabs)');
+  };
 
   return (
-    <View style={{ padding: 40 }}>
-      <View style={styles.ImageContainer}>
-        <Image
-          source={"https://ekiedurclpnzdhwftmod.supabase.co/storage/v1/object/sign/Images/bk-removebg-preview.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85YTVmYjQ5MS0xMWIzLTQ5ZmMtYWI1ZS1iZTJiNDJkNGZmMDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvYmstcmVtb3ZlYmctcHJldmlldy5wbmciLCJpYXQiOjE3Njc5NTU4NjAsImV4cCI6MjA4MzMxNTg2MH0.j6zP3mhwixxNHvS39Oges7Y_FlsEOwaCfUesXEUaUw8"} 
-          style={{ width: 200, height: 200, marginRight: "auto", marginLeft: "auto"}}
-        />
-         <Text style={styles.Text}> OM SHANTI</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={styles.inner}>
+        <View style={styles.imageSection}>
+          <Image
+            source="https://ekiedurclpnzdhwftmod.supabase.co/storage/v1/object/sign/Images/bk-removebg-preview.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85YTVmYjQ5MS0xMWIzLTQ5ZmMtYWI1ZS1iZTJiNDJkNGZmMDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvYmstcmVtb3ZlYmctcHJldmlldy5wbmciLCJpYXQiOjE3Njc5NTU4NjAsImV4cCI6MjA4MzMxNTg2MH0.j6zP3mhwixxNHvS39Oges7Y_FlsEOwaCfUesXEUaUw8"
+            style={styles.logo}
+            contentFit="contain"
+          />
+          <Text style={styles.brandText}>OM SHANTI</Text>
+        </View>
+
+        <View style={styles.form}>
+          {errorMsg && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{errorMsg}</Text>
+            </View>
+          )}
+
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={(t) => { setEmail(t); setErrorMsg(null); }}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+            editable={!loading}
+            style={[styles.input, loading && styles.inputDisabled]}
+          />
+
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={(t) => { setPassword(t); setErrorMsg(null); }}
+            secureTextEntry
+            autoComplete="password"
+            editable={!loading}
+            style={[styles.input, loading && styles.inputDisabled]}
+          />
+
+          <Pressable
+            onPress={handleLogin}
+            disabled={loading}
+            style={({ pressed }) => [
+              styles.button,
+              loading && styles.buttonDisabled,
+              pressed && !loading && styles.buttonPressed,
+            ]}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Login</Text>
+            )}
+          </Pressable>
+        </View>
       </View>
-
-      <TextInput
-        placeholder="Username"
-        value={email}
-        onChangeText={setEmail}
-        style={{
-          borderWidth: 1,
-          marginBottom: 15,
-          padding: 10,
-        }}
-      />
-
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={{
-          borderWidth: 1,
-          marginBottom: 20,
-          padding: 10,
-        }}
-      />
-
-      <Button title="Login" onPress={handleLogin} />
-    </View>
-  )
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
-  ImageContainer : {
-    height : "50%",
-    width : "100%",
-    justifyContent : "center",
-    alignContent : "center"
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-  Text : {
-    fontWeight : 'bold',
-    fontSize : 20,
-     marginRight: "auto",
-     marginLeft: "auto",
-    marginVertical : 50
-  }
-})
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  imageSection: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  logo: {
+    width: 160,
+    height: 160,
+  },
+  brandText: {
+    fontWeight: 'bold',
+    fontSize: 22,
+    marginTop: 16,
+    color: '#1e293b',
+  },
+  form: {
+    gap: 12,
+  },
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 16,
+    backgroundColor: '#f9fafb',
+  },
+  inputDisabled: {
+    backgroundColor: '#e5e7eb',
+    color: '#9ca3af',
+  },
+  button: {
+    backgroundColor: '#2563eb',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: 48,
+  },
+  buttonDisabled: {
+    backgroundColor: '#93c5fd',
+  },
+  buttonPressed: {
+    backgroundColor: '#1d4ed8',
+  },
+});
