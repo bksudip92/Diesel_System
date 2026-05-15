@@ -25,6 +25,7 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 const PROFILE_STORAGE_KEY = 'user_profile';
+const SESSION_FLAG_KEY = 'is_logged_in';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -62,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearProfile = async () => {
-    await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
+    await AsyncStorage.multiRemove([PROFILE_STORAGE_KEY, SESSION_FLAG_KEY]);
     setProfile(null);
   };
 
@@ -75,12 +76,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const initialize = async () => {
-      // 1. Restore session from storage
+      // ─── FAST PATH: check AsyncStorage for cached login flag ───
+      // This is instant (no network) and lets us skip the login page
+      // before Supabase SDK finishes restoring its session.
+      try {
+        const [loginFlag, cachedProfileJson] = await AsyncStorage.multiGet([
+          SESSION_FLAG_KEY,
+          PROFILE_STORAGE_KEY,
+        ]);
+
+        const isLoggedIn = loginFlag[1] === 'true';
+        const cachedProfile = cachedProfileJson[1]
+          ? (JSON.parse(cachedProfileJson[1]) as UserProfile)
+          : null;
+
+        if (isLoggedIn && cachedProfile && mounted) {
+          // Immediately unblock the UI — user sees tabs, not login
+          setProfile(cachedProfile);
+          setSession({ user: { email: cachedProfile.email } } as unknown as Session);
+          setLoading(false);
+
+          // Now verify real session from Supabase in the background
+          supabase.auth.getSession().then(async ({ data }) => {
+            if (!mounted) return;
+
+            if (data.session) {
+              // Real session is valid — swap in the real session object
+              setSession(data.session);
+              // Silently refresh profile in background
+              const userEmail = data.session.user.email;
+              if (userEmail) {
+                const freshProfile = await fetchProfile(userEmail);
+                if (mounted && freshProfile) setProfile(freshProfile);
+              }
+            } else {
+              // Session expired — force back to login
+              setSession(null);
+              await clearProfile();
+            }
+          });
+          return; // Fast path done — don't block on Supabase below
+        }
+      } catch {
+        // AsyncStorage read failed — fall through to normal path
+      }
+
+      // ─── NORMAL PATH: no cached login flag, wait for Supabase ───
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
 
       if (data.session) {
         setSession(data.session);
+
+        // Save login flag + fetch profile
+        await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
         const userEmail = data.session.user.email;
         if (userEmail) {
           const prof = await fetchProfile(userEmail);
@@ -95,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initialize();
 
-    // 2. Subscribe to auth state changes
+    // Subscribe to auth state changes (handles fresh login / sign-out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         if (!mounted) return;
@@ -103,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
 
         if (newSession?.user?.email) {
+          await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
           const prof = await fetchProfile(newSession.user.email);
           if (mounted) setProfile(prof);
         } else {

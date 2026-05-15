@@ -117,12 +117,12 @@
 //     borderRadius: 12,
 //     padding: 16,
 //     marginBottom: 12,
-//     // Shadow for iOS
-//     shadowColor: '#000',
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 4,
-//     // Shadow for Android
+//     // boxShadow for iOS
+//     boxShadowColor: '#000',
+//     boxShadowOffset: { width: 0, height: 2 },
+//     boxShadowOpacity: 0.1,
+//     boxShadowRadius: 4,
+//     // boxShadow for Android
 //     elevation: 3,
 //   },
 //   cardHeader: {

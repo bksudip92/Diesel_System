@@ -25,7 +25,7 @@ interface FuelLog {
 
 interface UserProfile {
   name: string | null;
-  location: string | null ;
+  location: string | null;
 }
 
 export interface FuelLogWithVehicle {
@@ -35,14 +35,14 @@ export interface FuelLogWithVehicle {
 }
 
 export interface Vehicle_Info {
-  vehicle_number : number,
-  vehicle_name : string,
-  vehicle_id :number,
-  owner_name : string,
-  department : string,
-  organization : string,
-  permitted_liters : number,
-  place : string
+  vehicle_number: number,
+  vehicle_name: string,
+  vehicle_id: number,
+  owner_name: string,
+  department: string,
+  organization: string,
+  permitted_liters: number,
+  place: string
 }
 
 
@@ -51,8 +51,8 @@ export default function FillFuel() {
   const params = useLocalSearchParams<{ vehicleId: string | string[] }>();
 
   const vehicleId = Array.isArray(params.vehicleId) ? params.vehicleId[0] : params.vehicleId;
- console.log("receiving", vehicleId);
- 
+  console.log("receiving", vehicleId);
+
   const [loading, setLoading] = useState<boolean>(true);
 
   const [lastFuelLog, setLastFuelLog] = useState<FuelLogWithVehicle | null>(null);
@@ -69,17 +69,17 @@ export default function FillFuel() {
       getVehicle_Info();
     }
     else {
-        Alert.alert('Error', 'Please Scan the QR Again');
-        setLoading(false);
-        return;
+      Alert.alert('Error', 'Please Scan the QR Again');
+      setLoading(false);
+      return;
     }
   }, []);
-  
+
   const fetchLastFuelLog = async () => {
-    
+
     try {
       setLoading(true);
-      
+
       if (!vehicleId) {
         Alert.alert('Error', 'No vehicle ID provided');
         setLoading(false);
@@ -88,20 +88,20 @@ export default function FillFuel() {
 
       const { data, error } = await supabase
         .from("fuel_logs_with_vehicle")     // This is fetching View not Table
-        .select("*")       
-        .eq("vehicle_number", vehicleId )     // To make we get only specific vehicle logs
+        .select("*")
+        .eq("vehicle_number", vehicleId)     // To make we get only specific vehicle logs
         .limit(2)
         .order('meter_reading', { ascending: false });
-    
+
       if (error) {
-        Alert.alert("Can't able to Fetch data")  
+        Alert.alert("Can't able to Fetch data")
       }
 
       if (data) {
         if (Array.isArray(data) && data.length > 0) {
           setLastFuelLog(data[0]);
           console.log(data);
-          
+
         } else {
           setLastFuelLog(null);
         }
@@ -116,35 +116,35 @@ export default function FillFuel() {
 
   const getVehicle_Info = async () => {
     try {
-      const { data , error } = await supabase
+      const { data, error } = await supabase
         .from('vehicle_info')
         .select("*")
-        .eq("vehicle_number", vehicleId );
+        .eq("vehicle_number", vehicleId);
 
-        if (data) {
-          if (Array.isArray(data) && data.length > 0) {
-            setVehicleInfo(data[0]);
-            setVehicleIdFK(data[0].vehicle_id)
-            console.log("vehicle Info");
-            
-          } else {
-            //setVehicleInfo(null);
-          }
+      if (data) {
+        if (Array.isArray(data) && data.length > 0) {
+          setVehicleInfo(data[0]);
+          setVehicleIdFK(data[0].vehicle_id)
+          console.log("vehicle Info");
+
+        } else {
+          //setVehicleInfo(null);
         }
-        else console.log(error) ; 
+      }
+      else console.log(error);
 
     } catch (error) {
       console.log(error)
     }
   }
-  
+
 
   const calculateDistance = () => {
     if (lastFuelLog && meterReading) {
       const reading = parseFloat(meterReading);
       const previousReading = lastFuelLog.meter_reading || 0;
-      return reading > previousReading 
-        ? reading - previousReading 
+      return reading > previousReading
+        ? reading - previousReading
         : 0;
     }
     return 0;
@@ -161,24 +161,24 @@ export default function FillFuel() {
     let UserInfo = {} as UserProfile
     try {
       const jsonValue = await AsyncStorage.getItem('@user_profile');
-       UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
+      UserInfo = jsonValue ? JSON.parse(jsonValue) : {};
     } catch (e) {
       console.error("Error reading user", e);
       Alert.alert('Error', 'Failed to read user info. Please log in again.');
       return;
     }
     const place = (UserInfo as any).place ?? '';
-    
+
     const reading = parseFloat(meterReading);
     const filled = parseFloat(filledLiters);
-    
+
     if (!reading || reading <= 0) {
       Alert.alert('Error', 'Please enter a valid meter reading');
       return;
     }
 
     const previousReading = lastFuelLog?.meter_reading || 0;
-    console.log("prev",previousReading)
+    console.log("prev", previousReading)
     if (reading <= previousReading) {
       Alert.alert('Error', 'New meter reading must be greater than previous reading');
       return;
@@ -191,7 +191,7 @@ export default function FillFuel() {
 
     const distance = calculateDistance();
     const efficiency = parseFloat(calculateEfficiency());
-    
+
 
     try {
       const { error: insertError } = await supabase
@@ -203,10 +203,10 @@ export default function FillFuel() {
           calculated_distance: distance,
           filled_liters: filled,
           calculated_efficiency: efficiency,
-          place : place,
-          transaction_date: new Date().toISOString().slice(0,10),
-          transaction_time : new Date().toLocaleTimeString().slice(16,24),
-          transaction_timestamp : new Date().toISOString(),
+          place: place,
+          transaction_date: new Date().toISOString().slice(0, 10),
+          transaction_time: new Date().toLocaleTimeString().slice(16, 24),
+          transaction_timestamp: new Date().toISOString(),
         });
 
       if (insertError) throw insertError;
@@ -217,11 +217,11 @@ export default function FillFuel() {
           onPress: () => router.replace('/(tabs)'),
         },
       ]);
-      
+
       // Reset form
       setMeterReading('');
       setFilledLiters('');
-    } 
+    }
     catch (error) {
       console.error('Error submitting fuel log:', error);
       Alert.alert('Error', 'Failed to create fuel log entry');
@@ -250,49 +250,49 @@ export default function FillFuel() {
 
   const previousReading = lastFuelLog?.meter_reading || 0;
 
-const VehicleInfoCard = ({ info }: { info: Vehicle_Info }) => (
-  <View style={styles.TopCard}>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Vehicle :</Text>
-      <Text style={styles.TopValue}>{info.vehicle_number}</Text>
+  const VehicleInfoCard = ({ info }: { info: Vehicle_Info }) => (
+    <View style={styles.TopCard}>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Vehicle :</Text>
+        <Text style={styles.TopValue}>{info.vehicle_number}</Text>
+      </View>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Name:</Text>
+        <Text style={styles.TopValue}>{info.vehicle_name}</Text>
+      </View>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Owner:</Text>
+        <Text style={styles.TopValue}>{info.owner_name}</Text>
+      </View>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Department:</Text>
+        <Text style={styles.TopValue}>{info.department}</Text>
+      </View>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Organization:</Text>
+        <Text style={styles.TopValue}>{info.organization}</Text>
+      </View>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Place:</Text>
+        <Text style={styles.TopValue}>{info.place}</Text>
+      </View>
+      <View style={styles.TopRow}>
+        <Text style={styles.TopLabel}>Permitted Liters:</Text>
+        <Text style={styles.TopValue}>{info.permitted_liters}</Text>
+      </View>
     </View>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Name:</Text>
-      <Text style={styles.TopValue}>{info.vehicle_name}</Text>
-    </View>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Owner:</Text>
-      <Text style={styles.TopValue}>{info.owner_name}</Text>
-    </View>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Department:</Text>
-      <Text style={styles.TopValue}>{info.department}</Text>
-    </View>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Organization:</Text>
-      <Text style={styles.TopValue}>{info.organization}</Text>
-    </View>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Place:</Text>
-      <Text style={styles.TopValue}>{info.place}</Text>
-    </View>
-    <View style={styles.TopRow}>
-      <Text style={styles.TopLabel}>Permitted Liters:</Text>
-      <Text style={styles.TopValue}>{info.permitted_liters}</Text>
-    </View>
-  </View>
-);
+  );
 
   return (
     <ScrollView style={styles.container}>
 
       {vehicleInfo ? (
-          <VehicleInfoCard info={vehicleInfo} />
-        ) : (
-          <View style={styles.centerContainer}>
-            <Text>No vehicle data found. Please scan again.</Text>
-          </View>
-        )}
+        <VehicleInfoCard info={vehicleInfo} />
+      ) : (
+        <View style={styles.centerContainer}>
+          <Text>No vehicle data found. Please scan again.</Text>
+        </View>
+      )}
 
 
       {/* Fuel Log Entry Form */}
@@ -321,7 +321,7 @@ const VehicleInfoCard = ({ info }: { info: Vehicle_Info }) => (
         {calculateDistance() > 0 && (
           <View style={styles.calculatedCard}>
             <Text style={styles.calculatedTitle}>Calculated Values</Text>
-            
+
             <View style={styles.calculatedRow}>
               <Text style={styles.calculatedLabel}>Distance:</Text>
               <Text style={styles.calculatedValue}>{calculateDistance()} km</Text>
@@ -345,7 +345,7 @@ const VehicleInfoCard = ({ info }: { info: Vehicle_Info }) => (
       {lastFuelLog && (
         <View style={styles.card}>
           <Text style={styles.title}>Vehicle Info</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.label}>Previous Meter Reading:</Text>
             <Text style={styles.meterValue}>{previousReading} km</Text>
@@ -374,12 +374,12 @@ const VehicleInfoCard = ({ info }: { info: Vehicle_Info }) => (
 
 
     </ScrollView>
-    
+
   );
 }
 
 const styles = StyleSheet.create({
-  
+
   TopCard: {
     backgroundColor: '#fff667',
     marginHorizontal: 16,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1e40af',
   },
-  
+
   submitButton: {
     backgroundColor: '#2563eb',
     padding: 16,

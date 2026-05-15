@@ -36,7 +36,7 @@ export default function VehicleScanner() {
           }
           else {
             
-            router.navigate('/type_vehicleNumber')
+           // router.navigate('/type_vehicleNumber')
           }
           setScanned(true);
         }}

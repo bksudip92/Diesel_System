@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
 
 // 1. Define the interface matching your JSON data exactly
-interface VehicleData { 
-  current_meter_reading: number; 
+interface VehicleData {
+  current_meter_reading: number;
   department: string | null;
   organization: string | null;
   owner_name: string | null;
@@ -18,11 +18,11 @@ interface VehicleData {
   vehicle_type: string;
 }
 
-const router = useRouter()  
+const router = useRouter()
 
 export default function VehicleListScreen() {
 
-  const [ data , setData ] = useState<VehicleData[]>()
+  const [data, setData] = useState<VehicleData[]>()
 
   const renderItem: ListRenderItem<VehicleData> = ({ item }) => (
     <VehicleCard item={item} handleItemPress={() => onCardClick(item)} />
@@ -30,8 +30,8 @@ export default function VehicleListScreen() {
 
   const VehicleCard = ({ item, handleItemPress }: { item: VehicleData; handleItemPress: () => void }) => {
     return (
-      <Pressable 
-        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} 
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
         onPress={() => handleItemPress()}
       >
         <View style={styles.headerRow}>
@@ -46,7 +46,7 @@ export default function VehicleListScreen() {
         </View>
         {/* --- Divider --- */}
         <View style={styles.divider} />
-  
+
         {/* --- Middle Row (Optional: Meter Reading & Liters) --- */}
         <View style={styles.infoRow}>
           <Text style={styles.infoText}>
@@ -56,7 +56,7 @@ export default function VehicleListScreen() {
             Limit: <Text style={styles.infoValue}>{item.permitted_liters}L</Text>
           </Text>
         </View>
-  
+
         {/* --- Footer Row (Owner Name & Org) --- */}
         <View style={styles.footerRow}>
           <View style={styles.footerItemLeft}>
@@ -65,7 +65,7 @@ export default function VehicleListScreen() {
               {item.owner_name || 'N/A'}
             </Text>
           </View>
-  
+
           <View style={styles.footerItemRight}>
             <Text style={styles.label}>Org / Dept</Text>
             <Text style={styles.orgName} numberOfLines={1}>
@@ -76,26 +76,26 @@ export default function VehicleListScreen() {
       </Pressable>
     );
   };
-  
 
-useEffect(() => {
-  FetchVehicleData()
-}, [])
+
+  useEffect(() => {
+    FetchVehicleData()
+  }, [])
 
   const FetchVehicleData = async () => {
-    const { data , error } = await supabase
+    const { data, error } = await supabase
       .from('vehicles')
       .select('*')
 
     if (data) {
       setData(data as any)
     }
-    else if (error){
+    else if (error) {
       Alert.alert("Unable to Fetch Vehicles Data")
     }
   }
 
-  const onCardClick = async (data : VehicleData) => {
+  const onCardClick = async (data: VehicleData) => {
     router.push(`/edit-vehicle?vehicle=${data.vehicle_number}`);
   }
   return (
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    // Shadow for iOS
+    // boxShadow for iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   cardPressed: {
-    opacity: 0.7, 
+    opacity: 0.7,
     transform: [{ scale: 0.98 }]
   },
 });
