@@ -1,21 +1,12 @@
+import { MonthlyReport } from '@/types/database';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-
-interface MonthItem {
-  id: number;
-  month_name : string;
-  total_diesel : number,
-  total_fills : number,
-  first_date : number, 
-  last_date : number
-}
-
 // Define the MenuListItem props type
 interface MenuListItemProps {
-  item: MonthItem;
+  item: MonthlyReport;
   onPress: (itemId: number) => void;
 }
 
@@ -27,7 +18,7 @@ function Months() {
   const LastDatePrev = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   
   const router = useRouter()
-  const [ data , setData] = useState<MonthItem>()
+  const [ data , setData] = useState<MonthlyReport>()
   // const [ canbeChecked , setcanbeChecked ] = useState(false)
 
   useEffect(() => {

@@ -1,5 +1,6 @@
+import { FuelLog } from '@/types/database';
 import { supabase } from '@/lib/supabase';
-import { Ionicons } from '@expo/vector-icons'; // Built-in with Expo
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
@@ -21,7 +22,7 @@ function MonthlyReports() {
   const params = useLocalSearchParams()
   const [FirstDate, setFirstDate] = useState()
   const [LastDate, setLastDate] = useState()
-  const [data, setData] = useState<FuelRecord[]>([])
+  const [data, setData] = useState<FuelLog[]>([])
   const MonthName = params.month // sending parameter and receiving parameter should be same,
   console.log(MonthName);
   let firstMonth = ''
@@ -85,13 +86,14 @@ function MonthlyReports() {
   };
 
   // 3. Helper: Efficiency Color Logic
-  const getEfficiencyColor = (eff: number) => {
+  const getEfficiencyColor = (eff: number | null) => {
+    if (eff === null) return '#9CA3AF'; // Gray (Neutral/No data)
     if (eff >= 15) return '#10B981'; // Green (Good)
     if (eff < 5) return '#EF4444';   // Red (Bad)
     return '#F59E0B';                // Orange/Yellow (Average)
   };
 
-  const renderItem = ({ item }: { item: FuelRecord }) => {
+  const renderItem = ({ item }: { item: FuelLog }) => {
     const efficiencyColor = getEfficiencyColor(item.calculated_efficiency);
 
     return (
@@ -134,7 +136,8 @@ function MonthlyReports() {
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Efficiency</Text>
             <Text style={[styles.statValue, { color: efficiencyColor }]}>
-              {item.calculated_efficiency.toFixed(1)} <Text style={[styles.unit, { color: efficiencyColor }]}>km/L</Text>
+              {item.calculated_efficiency !== null ? `${item.calculated_efficiency.toFixed(1)} ` : '— '}
+              <Text style={[styles.unit, { color: efficiencyColor }]}>km/L</Text>
             </Text>
           </View>
         </View>

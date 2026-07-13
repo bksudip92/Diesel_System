@@ -1,5 +1,6 @@
+import { Vehicle } from '@/types/database';
 import { supabase } from '@/lib/supabase';
-import { RouteProp, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -13,31 +14,12 @@ import {
   View
 } from 'react-native';
 
-// Reuse the interface
-interface VehicleData {
-  vehicle_id: number;
-  vehicle_number: string;
-  vehicle_name: string;
-  current_meter_reading: number;
-  owner_name: string | null;
-  department: string | null;
-  organization: string | null;
-  permitted_liters: number;
-  // ... include other fields if needed
-}
-
-// Define route params type
-type RootStackParamList = {
-  VehicleEdit: { vehicle: VehicleData };
-};
-
-type EditScreenRouteProp = RouteProp<RootStackParamList, 'VehicleEdit'>;
 
 export default function VehicleEditScreen() {
   const navigation = useNavigation();
   const params = useLocalSearchParams();
   const vehicle  = params.vehicle;
-  const [ vehicleData , setVehicleData ] = useState<VehicleData>()
+  const [ vehicleData , setVehicle ] = useState<Vehicle>()
   console.log(vehicle);
   
   // --- Local State for Form Fields ---
