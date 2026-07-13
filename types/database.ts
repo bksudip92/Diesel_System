@@ -35,6 +35,17 @@ export interface FuelLogWithVehicle extends FuelLog {
   vehicle_number: string;
 }
 
+/** Flattened fuel log structure representing the joined query in Dashboard */
+export interface FuelLogFlat {
+  id: number;
+  filled_liters: number;
+  calculated_efficiency: number | null;
+  calculated_distance?: number;
+  transaction_timestamp: string;
+  place: string;
+  vehicles: string; // The joined vehicle number string
+}
+
 /** Matches the `monthly_reports` table */
 export interface MonthlyReport {
   id: number;
