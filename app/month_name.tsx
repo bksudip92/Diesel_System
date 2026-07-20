@@ -1,96 +1,57 @@
 import { FuelLog } from '@/types/database';
-import { supabase } from '@/lib/supabase';
+import { getMonthlyReportByName } from '@/services/reports';
+import { getLogsByDateRange } from '@/services/fuel-logs';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 
-
-interface FuelRecord {
-  id: number;
-  vehicle_id_fk: number;
-  transaction_date: string;
-  transaction_time: string;
-  filled_liters: number;
-  meter_reading: number;
-  calculated_distance: number;
-  calculated_efficiency: number;
-  place: string;
-}
-
 function MonthlyReports() {
-  const params = useLocalSearchParams()
-  const [FirstDate, setFirstDate] = useState()
-  const [LastDate, setLastDate] = useState()
-  const [data, setData] = useState<FuelLog[]>([])
-  const MonthName = params.month // sending parameter and receiving parameter should be same,
-  console.log(MonthName);
-  let firstMonth = ''
-  let lastMonth = ''
-
+  const params = useLocalSearchParams();
+  const [data, setData] = useState<FuelLog[]>([]);
+  const monthName = params.month as string;
 
   useEffect(() => {
-    GetMonthDates()
+    loadMonthData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  }, [])
+  /**
+   * Fetch the month's date range then fetch logs in one clean async flow.
+   * This avoids the original race condition where firstMonth/lastMonth
+   * closure variables were read before React state had settled.
+   */
+  const loadMonthData = async () => {
+    const { data: report, error: reportError } = await getMonthlyReportByName(monthName);
 
-  const GetMonthDates = async () => {
-
-    const { data, error: GetError } = await supabase
-      .from('monthly_reports')
-      .select('*')
-      .eq("month_name", MonthName)
-
-    if (GetError) {
-      Alert.alert("Unable to get Monthly Data. Please Try Again")
-      console.error("Fetch Error:", GetError);
-      throw GetError;
+    if (reportError || !report) {
+      Alert.alert('Unable to get Monthly Data. Please Try Again');
+      return;
     }
 
-    if (data && data.length > 0) {
-      firstMonth = new Date(data[0].first_date).toISOString()
-      lastMonth = new Date(data[0].last_date).toISOString()
-      setFirstDate(firstMonth as any)
-      setLastDate(lastMonth as any)
-      GetMonthlyLogs()
-      console.log("monthly dates", data)
-    }
-  }
+    const startDate = new Date(report.first_date).toISOString();
+    const endDate = new Date(report.last_date).toISOString();
 
-  const GetMonthlyLogs = async () => {
-    console.log("sec func", firstMonth, typeof (firstMonth));
-    console.log(lastMonth, typeof (lastMonth));
+    const { data: logs, error: logsError } = await getLogsByDateRange(startDate, endDate);
 
-    const { data, error: GetError } = await supabase
-      .from('fuel_logs')
-      .select('*')
-      .gte('transaction_date', firstMonth)
-      .lt('transaction_date', lastMonth)
-
-    if (GetError) {
-      Alert.alert("Unable to get Monthly Data. Please Try Again")
-      console.error("Fetch Error:", GetError);
-      throw GetError;
+    if (logsError) {
+      Alert.alert('Unable to get Monthly Data. Please Try Again');
+      return;
     }
 
-    if (data) {
-      console.log("fuels data2", data);
-      setData(data as any)
-
-    }
-  }
+    if (logs) setData(logs);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  // 3. Helper: Efficiency Color Logic
   const getEfficiencyColor = (eff: number | null) => {
-    if (eff === null) return '#9CA3AF'; // Gray (Neutral/No data)
-    if (eff >= 15) return '#10B981'; // Green (Good)
-    if (eff < 5) return '#EF4444';   // Red (Bad)
-    return '#F59E0B';                // Orange/Yellow (Average)
+    if (eff === null) return '#9CA3AF';
+    if (eff >= 15) return '#10B981';
+    if (eff < 5) return '#EF4444';
+    return '#F59E0B';
   };
 
   const renderItem = ({ item }: { item: FuelLog }) => {
@@ -115,8 +76,6 @@ function MonthlyReports() {
 
         {/* Main Stats Row */}
         <View style={styles.statsRow}>
-
-          {/* Fuel */}
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Fuel</Text>
             <Text style={styles.statValue}>
@@ -124,7 +83,6 @@ function MonthlyReports() {
             </Text>
           </View>
 
-          {/* Distance */}
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Distance</Text>
             <Text style={styles.statValue}>
@@ -132,7 +90,6 @@ function MonthlyReports() {
             </Text>
           </View>
 
-          {/* Efficiency (Highlighted) */}
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Efficiency</Text>
             <Text style={[styles.statValue, { color: efficiencyColor }]}>
@@ -150,25 +107,24 @@ function MonthlyReports() {
       </View>
     );
   };
+
   return (
-    <View>
+    <View style={styles.container}>
       <FlatList
-        data={data ? data : []}
+        data={data}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No fuel records found.</Text>
-        }
+        ListEmptyComponent={<Text style={styles.emptyText}>No fuel records found.</Text>}
       />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6', // Light grey background
+    backgroundColor: '#F3F4F6',
   },
   listContent: {
     padding: 16,
@@ -178,12 +134,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    // boxShadow for iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    // boxShadow for Android
     elevation: 3,
   },
   cardHeader: {
@@ -250,8 +204,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
-    marginHorizontal: -16, // Pull to edges
-    marginBottom: -16,     // Pull to bottom
+    marginHorizontal: -16,
+    marginBottom: -16,
     marginTop: 4,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -264,14 +218,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginLeft: 6,
-    fontFamily: 'Courier', // Monospace font for numbers often looks better
+    fontFamily: 'Courier',
   },
   emptyText: {
     textAlign: 'center',
     color: '#9CA3AF',
     marginTop: 20,
-  }
+  },
 });
 
-
-export default MonthlyReports 
+export default MonthlyReports;

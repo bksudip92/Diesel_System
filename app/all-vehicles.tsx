@@ -1,18 +1,12 @@
-import { supabase } from '@/lib/supabase';
+import { getAllVehicles } from '@/services/vehicles';
 import { Vehicle } from '@/types/database';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
 
-const router = useRouter()
-
 export default function VehicleListScreen() {
-
-  const [data, setData] = useState<Vehicle[]>()
-
-  const renderItem: ListRenderItem<Vehicle> = ({ item }) => (
-    <VehicleCard item={item} handleItemPress={() => onCardClick(item)} />
-  );
+  const router = useRouter();
+  const [data, setData] = useState<Vehicle[]>([]);
 
   const VehicleCard = ({ item, handleItemPress }: { item: Vehicle; handleItemPress: () => void }) => {
     return (
@@ -33,7 +27,7 @@ export default function VehicleListScreen() {
         {/* --- Divider --- */}
         <View style={styles.divider} />
 
-        {/* --- Middle Row (Optional: Meter Reading & Liters) --- */}
+        {/* --- Middle Row --- */}
         <View style={styles.infoRow}>
           <Text style={styles.infoText}>
             Reading: <Text style={styles.infoValue}>{item.current_meter_reading} km</Text>
@@ -43,7 +37,7 @@ export default function VehicleListScreen() {
           </Text>
         </View>
 
-        {/* --- Footer Row (Owner Name & Org) --- */}
+        {/* --- Footer Row --- */}
         <View style={styles.footerRow}>
           <View style={styles.footerItemLeft}>
             <Text style={styles.label}>Owner</Text>
@@ -51,7 +45,6 @@ export default function VehicleListScreen() {
               {item.owner_name || 'N/A'}
             </Text>
           </View>
-
           <View style={styles.footerItemRight}>
             <Text style={styles.label}>Org / Dept</Text>
             <Text style={styles.orgName} numberOfLines={1}>
@@ -63,27 +56,27 @@ export default function VehicleListScreen() {
     );
   };
 
+  const renderItem: ListRenderItem<Vehicle> = ({ item }) => (
+    <VehicleCard item={item} handleItemPress={() => onCardClick(item)} />
+  );
 
   useEffect(() => {
-    FetchVehicle()
-  }, [])
+    fetchVehicle();
+  }, []);
 
-  const FetchVehicle = async () => {
-    const { data, error } = await supabase
-      .from('vehicles')
-      .select('*')
-
-    if (data) {
-      setData(data as any)
+  const fetchVehicle = async () => {
+    const { data: vehicles, error } = await getAllVehicles();
+    if (error) {
+      Alert.alert('Unable to Fetch Vehicles Data');
+      return;
     }
-    else if (error) {
-      Alert.alert("Unable to Fetch Vehicles Data")
-    }
-  }
+    if (vehicles) setData(vehicles);
+  };
 
-  const onCardClick = async (data: Vehicle) => {
-    router.push(`/edit-vehicle?vehicle=${data.vehicle_number}`);
-  }
+  const onCardClick = (vehicle: Vehicle) => {
+    router.push(`/edit-vehicle?vehicle=${vehicle.vehicle_number}`);
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -92,38 +85,43 @@ export default function VehicleListScreen() {
         keyExtractor={(item) => item.vehicle_id.toString()}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No vehicles found.</Text>
+        }
       />
     </View>
   );
 }
 
-// 4. Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2f2f2', // Light grey background for the screen
-    paddingTop: 50, // Space for status bar
+    backgroundColor: '#f2f2f2',
+    paddingTop: 50,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#9ca3af',
+    marginTop: 40,
+    fontSize: 16,
   },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    // boxShadow for iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    // Elevation for Android
     elevation: 3,
     borderLeftWidth: 5,
-    borderLeftColor: '#007AFF', // Accent color strip on the left
+    borderLeftColor: '#007AFF',
   },
-  // --- Header Styles ---
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -144,15 +142,13 @@ const styles = StyleSheet.create({
   vehicleName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF', // Highlight color
+    color: '#007AFF',
   },
-  // --- Divider ---
   divider: {
     height: 1,
     backgroundColor: '#eee',
     marginVertical: 12,
   },
-  // --- Info Row Styles ---
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -166,13 +162,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  // --- Footer Styles ---
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#f9f9f9',
-    marginHorizontal: -16, // Extend to edges
-    marginBottom: -16, // Extend to bottom edge
+    marginHorizontal: -16,
+    marginBottom: -16,
     marginTop: 0,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -199,6 +194,6 @@ const styles = StyleSheet.create({
   },
   cardPressed: {
     opacity: 0.7,
-    transform: [{ scale: 0.98 }]
+    transform: [{ scale: 0.98 }],
   },
 });

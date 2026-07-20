@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
     padding: 10
   },
   buttonContainer: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 2,
-    marginTop: 420,
+    alignItems: 'flex-end',
+    paddingBottom: 20,
   },
   button: {
     paddingVertical: 15,

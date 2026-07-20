@@ -29,16 +29,11 @@ export default function VehicleScanner() {
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
-        onBarcodeScanned={({ data }: { data: string }) => {
+        onBarcodeScanned={scanned ? undefined : ({ data }: { data: string }) => {
           if (data) {
-            router.navigate(`/fill-fuel?vehicleId=${encodeURIComponent(data)}`)
-            console.log("sending",data, typeof data);
+            setScanned(true);
+            router.navigate(`/fill-fuel?vehicleId=${encodeURIComponent(data)}`);
           }
-          else {
-            
-           // router.navigate('/type_vehicleNumber')
-          }
-          setScanned(true);
         }}
         />
       {!scanned && (

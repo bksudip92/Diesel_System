@@ -1,115 +1,71 @@
+import { getMonthlyReports, refreshMonthlyReport } from '@/services/reports';
 import { MonthlyReport } from '@/types/database';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-// Define the MenuListItem props type
 interface MenuListItemProps {
   item: MonthlyReport;
-  onPress: (itemId: number) => void;
 }
 
 function Months() {
   const now = new Date();
+  const firstDatePrev = new Date(now.getFullYear(), now.getMonth() - 1, 2).toISOString().slice(0, 10);
+  const lastDatePrev = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 
-  const FirstDatePrev = new Date(now.getFullYear(), now.getMonth() - 1, 2).toISOString().slice(0, 10);
-  
-  const LastDatePrev = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  
-  const router = useRouter()
-  const [ data , setData] = useState<MonthlyReport>()
-  // const [ canbeChecked , setcanbeChecked ] = useState(false)
+  const router = useRouter();
+  const [data, setData] = useState<MonthlyReport[]>([]);
 
   useEffect(() => {
-    GetMonths()
-  
-  }, [])
+    getMonths();
+  }, []);
 
-  const GetMonths = async () => {
-    const { data , error } = await supabase
-      .from('monthly_reports')
-      .select('*')
-
-    if (data) {
-      setData(data as any)
+  const getMonths = async () => {
+    const { data: reports, error } = await getMonthlyReports();
+    if (error) {
+      Alert.alert('Unable to Fetch Months');
+      return;
     }
-    else if (error){
-      Alert.alert('Unable to Fetch Months')
+    if (reports) setData(reports);
+  };
+
+  const handleRefreshData = async () => {
+    const prevDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (now <= prevDate) {
+      Alert.alert('No new Data to Fetch');
+      return;
     }
-  }
 
-  const RefreshData = async () => {
-    const prevDate = new Date(now.getFullYear(), now.getMonth(),1)
-    if(now > prevDate ) {
-      
-      let total_diesel : number = 0
-      let total_fills : number = 0
-  
-      const { data, error: GetError } = await supabase
-        .from('fuel_logs')
-        .select('filled_liters.sum(), filled_liters.count()')
-        .gte('transaction_date', FirstDatePrev)
-        .lt('transaction_date', LastDatePrev);
-  
-        if (GetError) {
-          Alert.alert("Unable to get Monthly Data. Please Try Again")
-          console.error("Fetch Error:", GetError);
-          throw GetError;
-        }
-    
-        if (data && data.length > 0) {
-          total_diesel = data[0].sum ?? 0;  
-          total_fills = data[0].count ?? 0;
-          
-        }
-      
-      const MonthName = now.toLocaleString('default', { month: 'long' });
-      const period = MonthName + " " + now.getFullYear();
-  
-      const { error: UpsertError } = await supabase
-        .from('monthly_reports')
-        .upsert({
-          month_name: period,
-          total_diesel: total_diesel,
-          total_fills: total_fills,
-          first_date : FirstDatePrev,
-          last_date : LastDatePrev
-        }); 
+    const monthName = now.toLocaleString('default', { month: 'long' });
+    const period = `${monthName} ${now.getFullYear()}`;
 
-      if (UpsertError) {
-        Alert.alert("Unable to Insert Data. Please Try Again")
-        console.error("Upsert Error:", UpsertError);
-        throw UpsertError;
-      }
+    const { error } = await refreshMonthlyReport({ firstDatePrev, lastDatePrev, period });
+    if (error) {
+      Alert.alert('Unable to Refresh Data. Please Try Again');
+      return;
     }
-    else {
-      Alert.alert("No new Data to Fetch")
-    }
-  }
+    // Reload list after successful refresh
+    getMonths();
+  };
 
-  const handleItemPress = async () => {
-    
-  }
-
-  const MenuListItem : React.FC<MenuListItemProps>  = ({ item, onPress }) => (
-    <Pressable onPress={() => router.navigate(`/month_name?month=${item.month_name}`)} style={styles.listItem}>
+  const MenuListItem: React.FC<MenuListItemProps> = ({ item }) => (
+    <Pressable
+      onPress={() => router.navigate(`/month_name?month=${item.month_name}`)}
+      style={styles.listItem}
+    >
       <View>
-    <View style={styles.textContainer}>
-  
-      <Text style={styles.itemTitle}>{item.month_name}</Text>
-  
-      <View style={styles.statsRow}>
-        {item.total_diesel ? (
-          <Text style={styles.subtitleText}>Diesel: {item.total_diesel} L</Text>
-        ) : null}
-  
-        {item.total_fills ? (
-          <Text style={styles.statusText}>Fills: {item.total_fills}</Text>
-        ) : null}
+        <View style={styles.textContainer}>
+          <Text style={styles.itemTitle}>{item.month_name}</Text>
+          <View style={styles.statsRow}>
+            {item.total_diesel ? (
+              <Text style={styles.subtitleText}>Diesel: {item.total_diesel} L</Text>
+            ) : null}
+            {item.total_fills ? (
+              <Text style={styles.statusText}>Fills: {item.total_fills}</Text>
+            ) : null}
+          </View>
+        </View>
       </View>
-    </View>
-    </View>
     </Pressable>
   );
 
@@ -117,22 +73,20 @@ function Months() {
     <ScrollView style={styles.container}>
       <FlatList
         data={Array.isArray(data) ? data : []}
-        renderItem={({ item }) => (
-          <MenuListItem item={item} onPress={handleItemPress} />
-        )}
+        renderItem={({ item }) => <MenuListItem item={item} />}
         keyExtractor={(item) => item.id.toString()}
         scrollEnabled={false}
+        ListEmptyComponent={<Text style={styles.emptyText}>No monthly reports yet.</Text>}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <Pressable onPress={RefreshData} style={styles.button}> 
-        <Text style={styles.buttonText}>Refresh Data </Text>
+      <Pressable onPress={handleRefreshData} style={styles.button}>
+        <Text style={styles.buttonText}>Refresh Data</Text>
       </Pressable>
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
- 
   button: {
     paddingVertical: 15,
     paddingHorizontal: 40,
@@ -142,6 +96,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    margin: 10,
   },
   buttonText: {
     color: '#fff',
@@ -154,39 +109,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-   listItem: {
-    flexDirection: 'row',       // Align Text Block and Icon horizontally
-    alignItems: 'center',       // Vertically center the icon
-    justifyContent: 'space-between', 
+  emptyText: {
+    textAlign: 'center',
+    color: '#9ca3af',
+    marginTop: 40,
+    fontSize: 16,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,       // Optional separator line
+    borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    borderRadius : 10,
-    margin : 5
-
+    borderRadius: 10,
+    margin: 5,
   },
   textContainer: {
-    flex: 1,                    // Take up all available width minus the icon
-    margin: 5,        
+    flex: 1,
+    margin: 5,
   },
   itemTitle: {
     fontSize: 16,
-    fontWeight: '600',          // Semi-bold for hierarchy
+    fontWeight: '600',
     color: '#333',
-    marginBottom: 20,            // Space between Title and Stats
+    marginBottom: 20,
   },
   statsRow: {
-    flexDirection: 'row',       // Places Diesel and Fills side-by-side
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,                    // Adds space between the two stat items
+    gap: 15,
   },
   subtitleText: {
     fontSize: 15,
     color: '#666',
-    fontWeight : 'bold',
-    backgroundColor: '#F2F4F7', // Optional: subtle pill background
+    fontWeight: 'bold',
+    backgroundColor: '#F2F4F7',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
@@ -194,7 +154,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 15,
-    color: '#007AFF',           // Blue to distinguish it
+    color: '#007AFF',
     fontWeight: 'bold',
   },
   separator: {
@@ -202,6 +162,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5e5e5',
     marginHorizontal: 12,
   },
-})
+});
 
-export default Months
+export default Months;

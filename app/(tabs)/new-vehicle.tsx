@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createVehicle } from "@/services/vehicles";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -72,53 +72,49 @@ export default function VehicleForm() {
   //     setVehicleNumber("Invalid vehicle number. Please enter in format XX-00-XX-0000.");
   //   }
   // };
-  function formatVehicleNumber(vehicleNumber?: string ) {
-
-    if (vehicleNumber !== undefined ){
+  function formatVehicleNumber(vehicleNumber?: string) {
+    if (vehicleNumber !== undefined) {
       const clean = vehicleNumber.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
       if (clean.length !== 10) {
-        console.error("Invalid length");
-        return Alert.alert("Vehicle Number should 10 characters");
+        Alert.alert('Vehicle Number should be 10 characters');
+        return;
       }
-      setvehicle_number(clean.replace(/^([A-Z0-9]{2})([A-Z0-9]{2})([A-Z0-9]{2})([A-Z0-9]{4})$/, "$1-$2-$3-$4"))
-
+      setvehicle_number(clean.replace(/^([A-Z0-9]{2})([A-Z0-9]{2})([A-Z0-9]{2})([A-Z0-9]{4})$/, '$1-$2-$3-$4'));
     }
   }
 
   const handleSubmit = async () => {
-
     try {
-      const { error: insertError } = await supabase
-        .from('vehicles')
-        .insert({
-          vehicle_number : vehicle_number,
-          vehicle_name : form.vehicle_name,
-          vehicle_class : form.vehicle_class,
-          owner_name : form.owner_name,
-          department : form.department,
-          organization : form.organization,
-          permitted_liters : form.permitted_liters,
-          current_meter_reading : form.current_meter_reading,
-          place : form.place
-        });
+      const { error } = await createVehicle({
+        vehicle_number: vehicle_number,
+        vehicle_name: form.vehicle_name,
+        vehicle_type: form.vehicle_type,
+        vehicle_class: form.vehicle_class,
+        owner_name: form.owner_name,
+        department: form.department,
+        organization: form.organization,
+        permitted_liters: form.permitted_liters,
+        current_meter_reading: form.current_meter_reading,
+        place: form.place,
+      });
 
-      if (insertError) console.log(insertError);
-     
-
-      Alert.alert('Success', 'Vehicle added successfully!', [
-          {
-          text: 'OK',
-          onPress: () => {
-            console.log(vehicle_number, "new veh")
-            router.navigate(`/qr-show?vehicle_number=${encodeURIComponent(vehicle_number)}`); 
-          }}]
-        )
-      } catch{
-        Alert.alert("Inserting of Data Failed")
+      if (error) {
+        Alert.alert('Error', 'Failed to add vehicle. Please try again.');
+        return;
       }
 
-}
+      Alert.alert('Success', 'Vehicle added successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            router.navigate(`/qr-show?vehicle_number=${encodeURIComponent(vehicle_number)}`);
+          },
+        },
+      ]);
+    } catch {
+      Alert.alert('Error', 'Inserting of Data Failed');
+    }
+  }
 
 return (
   <KeyboardAvoidingView

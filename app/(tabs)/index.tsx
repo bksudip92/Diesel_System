@@ -1,80 +1,42 @@
 import { useAuth } from '@/context/AuthProvider';
+import { getRecentLogs } from '@/services/fuel-logs';
 import { FuelLogFlat } from '@/types/database';
 import { useIsFocused } from '@react-navigation/native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
 
 export default function Dashboard() {
   const router = useRouter();
-  const refresh = useIsFocused()
+  const refresh = useIsFocused();
   const { profile } = useAuth();
 
   const [logs, setLogs] = useState<FuelLogFlat[]>([]);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
-  const FetchDetails = async () => {
+  const fetchDetails = async () => {
     const userPlace = profile?.place || '';
-    if (!userPlace) {
-      console.warn('No user place found');
+    if (!userPlace) return;
+
+    setLoading(true);
+    const { data, error } = await getRecentLogs(userPlace, 10);
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Please Refresh, Unable to get data');
       return;
     }
-
-    try {
-      const { data, error } = await supabase
-        .from('fuel_logs')
-        .select(`id,
-              filled_liters,
-              calculated_efficiency,
-              calculated_distance,
-              transaction_timestamp,
-              place,
-              vehicles(vehicle_number)`)
-        .eq("place", userPlace)
-        .order('transaction_timestamp', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.log('Error fetching logs:', error);
-        Alert.alert('Please Refresh, Unable to get data')
-        return;
-      }
-      if (data) {
-        const flattened: FuelLogFlat[] = data.map((row) => ({
-          id: row.id,
-          filled_liters: row.filled_liters,
-          calculated_efficiency: row.calculated_efficiency,
-          transaction_timestamp: row.transaction_timestamp,
-          place: row.place,
-          vehicles: Array.isArray(row.vehicles)
-            ? ((row.vehicles[0] as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle')
-            : ((row.vehicles as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle'),
-        }));
-        setLogs(flattened as any);
-        setLoading(false)
-      }
-    } catch (e) {
-      console.error("Error fetching logs", e);
-      Alert.alert('Error', 'Failed to load data.');
-      return;
-    }
-  }
+    if (data) setLogs(data);
+  };
 
   useFocusEffect(
-    // Callback should be wrapped in `React.useCallback` to avoid running the effect too often.
     useCallback(() => {
-      let active = true
-      FetchDetails()
-      console.log("Hello, I'm focused!");
-      setLoading(true)
-      // Return function is invoked whenever the route gets out of focus.
-      return () => {
-        active = false
-        console.log('This route is now unfocused.');
-      };
-    }, []),
+      fetchDetails();
+      return () => {};
+    // profile?.place is the dependency so data reloads if profile changes after mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profile?.place]),
   );
 
   const formatDate = (dateString: string) => {
@@ -83,17 +45,7 @@ export default function Dashboard() {
   };
 
   const renderItem = ({ item }: { item: FuelLogFlat }) => {
-    const vehicleNumber =
-      typeof item.vehicles === 'string'
-        ? item.vehicles
-        : 'Unknown Vehicle';
-
-    // const driverName =
-    //   typeof item.drivers === 'string'
-    //     ? item.drivers
-    //     : Array.isArray(item.drivers)
-    //       ? item.drivers[0]?.driver_name ?? 'Unknown Driver'
-    //       : (item.drivers as any)?.driver_name ?? 'Unknown Driver';
+    const vehicleNumber = typeof item.vehicles === 'string' ? item.vehicles : 'Unknown Vehicle';
 
     return (
       <View style={styles.card}>
@@ -118,15 +70,11 @@ export default function Dashboard() {
           </View>
         </View>
 
-
         {/* Footer: Timestamp */}
         <Text style={styles.dateText}>{formatDate(item.transaction_timestamp)}</Text>
       </View>
     );
   };
-
-
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -140,20 +88,22 @@ export default function Dashboard() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            !loading ? (
+              <Text style={styles.emptyText}>No fuel logs found for your location.</Text>
+            ) : null
+          }
         />
-
       </View>
       <View style={styles.buttonContainer}>
-        <Pressable onPress={() => router.navigate("/qr-scanner")} style={() => styles.button}>
+        <Pressable onPress={() => router.navigate('/qr-scanner')} style={() => styles.button}>
           <Text style={styles.buttonText}>Scan QR</Text>
         </Pressable>
-
       </View>
     </SafeAreaView>
   );
 }
 
-// 5. Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -162,7 +112,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 16,
-    marginBottom: 30
+    marginBottom: 30,
   },
   headerRow: {
     flexDirection: 'row',
@@ -170,12 +120,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  screenContainer: {
-    flex: 1,
-    backgroundColor: '#050505', // Very dark/black background
-  },
-
-  // 2. The Main Rectangle Container
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -205,17 +149,21 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 20,
   },
+  emptyText: {
+    textAlign: 'center',
+    color: '#9ca3af',
+    marginTop: 40,
+    fontSize: 16,
+  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
-    // boxShadow for iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    // Elevation for Android
     elevation: 3,
   },
   header: {
@@ -232,11 +180,6 @@ const styles = StyleSheet.create({
   idText: {
     fontSize: 12,
     color: '#94a3b8',
-  },
-  driverText: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 12,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -268,4 +211,4 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     textAlign: 'right',
   },
-})
+});
