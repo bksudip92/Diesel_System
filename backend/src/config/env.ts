@@ -10,6 +10,9 @@ const envSchema = z.object({
     .default('*')
     .transform((v) => v.split(',').map((s) => s.trim())),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
 });
 
 export type Env = z.infer<typeof envSchema>;

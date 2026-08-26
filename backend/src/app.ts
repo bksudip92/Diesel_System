@@ -7,6 +7,7 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import { healthRouter } from './routes/health.routes.js';
+import { authRouter } from './modules/auth/auth.routes.js';
 import type { PrismaClient } from './generated/prisma/client.js';
 
 export const API_PREFIX = '/api/v1';
@@ -35,6 +36,8 @@ export function createApp(env: Env, deps: AppDeps): Express {
   });
 
   app.use(healthRouter({ checkDb: () => deps.prisma.$queryRaw`SELECT 1` }));
+
+  app.use(`${API_PREFIX}/auth`, authRouter(env, deps.prisma));
 
   app.use(notFound());
   app.use(errorHandler(logger));
