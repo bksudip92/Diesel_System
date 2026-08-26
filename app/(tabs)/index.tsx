@@ -1,6 +1,8 @@
 import { useAuth } from '@/context/AuthProvider';
 import { getRecentLogs } from '@/services/fuel-logs';
 import { FuelLogFlat } from '@/types/database';
+import { colors } from '@/constants/colors';
+import { spacing, radius } from '@/constants/spacing';
 import { useIsFocused } from '@react-navigation/native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -107,57 +109,57 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     marginBottom: 30,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 2,
+    marginVertical: spacing.xs / 2,
   },
   button: {
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    backgroundColor: '#2563eb',
+    borderColor: colors.divider,
+    backgroundColor: colors.primary,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: colors.textInverse,
     fontSize: 20,
     fontWeight: '600',
   },
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.textPrimary,
   },
   listContent: {
     paddingBottom: 20,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#9ca3af',
+    color: colors.textMuted,
     marginTop: 40,
     fontSize: 16,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     padding: 12,
     marginBottom: 12,
     shadowColor: '#000',
@@ -170,21 +172,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   vehicleText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1e293b',
+    color: colors.textPrimary,
   },
   idText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   statsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
     padding: 12,
     marginBottom: 12,
   },
@@ -194,21 +196,21 @@ const styles = StyleSheet.create({
   },
   verticalLine: {
     width: 1,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: colors.border,
   },
   statLabel: {
     fontSize: 12,
-    color: '#64748b',
-    marginBottom: 4,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   statValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f172a',
+    color: colors.textPrimary,
   },
   dateText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     textAlign: 'right',
   },
 });
