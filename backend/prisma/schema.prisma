@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tables below mirror the existing Supabase (PostgreSQL) schema 1:1.
+// Column names are preserved via @@map / @map so live data never breaks.
+//
+// NOTE: Before applying migrations against production, verify this schema
+// against the real database:
+//   DATABASE_URL=<supabase-connection-string> npx prisma db pull
+// and reconcile any differences. The `vehicle_info` and `fuel_logs_with_vehicle`
+// views are NOT managed by Prisma — they are created in raw SQL inside the
+// baseline migration.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Vehicle {
+  vehicle_id           Int     @id @default(autoincrement()) @map("vehicle_id")
+  vehicle_number       String  @unique @map("vehicle_number")
+  vehicle_name         String  @map("vehicle_name")
+  vehicle_type         String  @map("vehicle_type")
+  vehicle_class        String  @map("vehicle_class")
+  owner_name           String? @map("owner_name")
+  department           String?
+  organization         String?
+  place                String?
+  current_meter_reading Float   @map("current_meter_reading")
+  permitted_liters     Float   @map("permitted_liters")
+
+  fuel_logs FuelLog[]
+
+  @@map("vehicles")
+}
+
+model FuelLog {
+  id                     Int     @id @default(autoincrement())
+  vehicle_id_fk          Int     @map("vehicle_id_fk")
+  meter_reading          Float   @map("meter_reading")
+  previous_meter_reading Float   @map("previous_meter_reading")
+  calculated_distance    Float   @map("calculated_distance")
+  filled_liters          Float   @map("filled_liters")
+  calculated_efficiency  Float?  @map("calculated_efficiency")
+  transaction_date       String  @map("transaction_date")
+  transaction_time       String  @map("transaction_time")
+  transaction_timestamp  String  @map("transaction_timestamp")
+  place                  String
+
+  vehicle Vehicle @relation(fields: [vehicle_id_fk], references: [vehicle_id])
+
+  @@index([place])
+  @@index([transaction_date])
+  @@index([vehicle_id_fk])
+  @@map("fuel_logs")
+}
+
+model MonthlyReport {
+  id           Int    @id @default(autoincrement())
+  month_name   String @unique @map("month_name")
+  total_diesel Float  @map("total_diesel")
+  total_fills  Int    @map("total_fills")
+  first_date   String @map("first_date")
+  last_date    String @map("last_date")
+
+  @@map("monthly_reports")
+}
+
+model YearlyReport {
+  id           Int    @id @default(autoincrement())
+  year_name    String @unique @map("year_name")
+  total_diesel Float  @map("total_diesel")
+  total_fills  Int    @map("total_fills")
+  first_date   String @map("first_date")
+  last_date    String @map("last_date")
+
+  @@map("yearly_reports")
+}
+
+model User {
+  id           String  @id
+  email        String  @unique
+  place        String
+  name         String?
+  password_hash String? @map("password_hash")
+
+  refresh_tokens RefreshToken[]
+
+  @@map("users")
+}
+
+// New table (additive — does not touch existing data)
+model RefreshToken {
+  id         Int       @id @default(autoincrement())
+  user_id    String    @map("user_id")
+  token_hash String    @unique @map("token_hash")
+  expires_at DateTime  @map("expires_at") @db.Timestamptz(6)
+  revoked_at DateTime? @map("revoked_at") @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("refresh_tokens")
+}

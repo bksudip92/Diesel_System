@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+
+# Generated Prisma Client (run `npm run db:generate`)
+src/generated/
+
+# Database dumps from Supabase (may contain PII — never commit)
+prisma/data/
+

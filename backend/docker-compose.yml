@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: diesel_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: diesel
+      POSTGRES_PASSWORD: diesel
+      POSTGRES_DB: diesel_system
+    ports:
+      # Host port 5432 may already be taken by a local Postgres — publish on 5433
+      - '5433:5432'
+    volumes:
+      - diesel_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U diesel -d diesel_system']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  diesel_pgdata:
