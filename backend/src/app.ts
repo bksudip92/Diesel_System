@@ -8,6 +8,10 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import { healthRouter } from './routes/health.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { usersRouter } from './modules/users/users.routes.js';
+import { vehiclesRouter } from './modules/vehicles/vehicles.routes.js';
+import { fuelLogsRouter } from './modules/fuel-logs/fuel-logs.routes.js';
+import { reportsRouter } from './modules/reports/reports.routes.js';
 import type { PrismaClient } from './generated/prisma/client.js';
 
 export const API_PREFIX = '/api/v1';
@@ -38,6 +42,10 @@ export function createApp(env: Env, deps: AppDeps): Express {
   app.use(healthRouter({ checkDb: () => deps.prisma.$queryRaw`SELECT 1` }));
 
   app.use(`${API_PREFIX}/auth`, authRouter(env, deps.prisma));
+  app.use(`${API_PREFIX}/users`, usersRouter(env, deps.prisma));
+  app.use(`${API_PREFIX}/vehicles`, vehiclesRouter(env, deps.prisma));
+  app.use(`${API_PREFIX}/fuel-logs`, fuelLogsRouter(env, deps.prisma));
+  app.use(`${API_PREFIX}/reports`, reportsRouter(env, deps.prisma));
 
   app.use(notFound());
   app.use(errorHandler(logger));
