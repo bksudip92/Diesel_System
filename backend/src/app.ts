@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import type { Env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { requestLogger } from './middleware/requestLogger.js';
@@ -12,6 +13,7 @@ import { usersRouter } from './modules/users/users.routes.js';
 import { vehiclesRouter } from './modules/vehicles/vehicles.routes.js';
 import { fuelLogsRouter } from './modules/fuel-logs/fuel-logs.routes.js';
 import { reportsRouter } from './modules/reports/reports.routes.js';
+import { openApiSpec } from './docs/openapi.js';
 import type { PrismaClient } from './generated/prisma/client.js';
 
 export const API_PREFIX = '/api/v1';
@@ -46,6 +48,14 @@ export function createApp(env: Env, deps: AppDeps): Express {
   app.use(`${API_PREFIX}/vehicles`, vehiclesRouter(env, deps.prisma));
   app.use(`${API_PREFIX}/fuel-logs`, fuelLogsRouter(env, deps.prisma));
   app.use(`${API_PREFIX}/reports`, reportsRouter(env, deps.prisma));
+
+  app.use(
+    `${API_PREFIX}/docs`,
+    swaggerUi.serve,
+    swaggerUi.setup(openApiSpec, {
+      swaggerOptions: { persistAuthorization: true },
+    }),
+  );
 
   app.use(notFound());
   app.use(errorHandler(logger));
