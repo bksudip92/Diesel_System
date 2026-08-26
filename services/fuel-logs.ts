@@ -1,17 +1,13 @@
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 import { FuelLog, FuelLogFlat, FuelLogWithVehicle } from '@/types/database';
 
 export interface CreateFuelLogInput {
-  vehicle_id_fk: number;
+  vehicle_number: string;
   meter_reading: number;
-  previous_meter_reading: number;
-  calculated_distance: number;
   filled_liters: number;
-  calculated_efficiency: number;
   place: string;
   transaction_date: string;
   transaction_time: string;
-  transaction_timestamp: string;
 }
 
 /**
@@ -22,74 +18,43 @@ export async function getRecentLogs(
   limit = 10,
 ): Promise<{ data: FuelLogFlat[] | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from('fuel_logs')
-      .select(
-        `id,
-         filled_liters,
-         calculated_efficiency,
-         calculated_distance,
-         transaction_timestamp,
-         place,
-         vehicles(vehicle_number)`,
-      )
-      .eq('place', place)
-      .order('transaction_timestamp', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-
-    const flattened: FuelLogFlat[] = (data ?? []).map((row) => ({
-      id: row.id,
-      filled_liters: row.filled_liters,
-      calculated_efficiency: row.calculated_efficiency,
-      transaction_timestamp: row.transaction_timestamp,
-      place: row.place,
-      vehicles: Array.isArray(row.vehicles)
-        ? ((row.vehicles[0] as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle')
-        : ((row.vehicles as { vehicle_number?: string })?.vehicle_number ?? 'Unknown Vehicle'),
-    }));
-
-    return { data: flattened, error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<FuelLogFlat[]>(
+      `/fuel-logs/recent?place=${encodeURIComponent(place)}&limit=${limit}`,
+    );
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }
 
 /**
- * Fetch the last fuel log for a vehicle by vehicle_number (uses the view).
+ * Fetch the last fuel log for a vehicle by vehicle_number.
  */
 export async function getLastFuelLog(
   vehicleNumber: string,
 ): Promise<{ data: FuelLogWithVehicle | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from('fuel_logs_with_vehicle')
-      .select('*')
-      .eq('vehicle_number', vehicleNumber)
-      .order('meter_reading', { ascending: false })
-      .limit(1);
-
-    if (error) throw error;
-    const item = Array.isArray(data) && data.length > 0 ? (data[0] as FuelLogWithVehicle) : null;
-    return { data: item, error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<FuelLogWithVehicle | null>(
+      `/fuel-logs/last?vehicleNumber=${encodeURIComponent(vehicleNumber)}`,
+    );
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }
 
 /**
- * Insert a new fuel log record.
+ * Insert a new fuel log record. Distance, efficiency and the vehicle meter
+ * advance are computed server-side.
  */
 export async function createFuelLog(
   input: CreateFuelLogInput,
 ): Promise<{ error: Error | null }> {
   try {
-    const { error } = await supabase.from('fuel_logs').insert(input);
-    if (error) throw error;
+    await apiFetch('/fuel-logs', { method: 'POST', body: input });
     return { error: null };
-  } catch (error: any) {
-    return { error };
+  } catch (e) {
+    return { error: e as Error };
   }
 }
 
@@ -101,15 +66,9 @@ export async function getLogsByDateRange(
   endDate: string,
 ): Promise<{ data: FuelLog[] | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from('fuel_logs')
-      .select('*')
-      .gte('transaction_date', startDate)
-      .lt('transaction_date', endDate);
-
-    if (error) throw error;
-    return { data: data as FuelLog[], error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<FuelLog[]>(`/fuel-logs?from=${startDate}&to=${endDate}`);
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }

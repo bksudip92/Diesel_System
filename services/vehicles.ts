@@ -1,36 +1,29 @@
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 import { Vehicle } from '@/types/database';
 
 /**
- * Fetch all vehicles from the `vehicles` table.
+ * Fetch all vehicles from the backend.
  */
 export async function getAllVehicles(): Promise<{ data: Vehicle[] | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase.from('vehicles').select('*');
-    if (error) throw error;
-    return { data: data as Vehicle[], error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<Vehicle[]>('/vehicles');
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }
 
 /**
- * Fetch a single vehicle by its vehicle_number (uses the vehicle_info view).
+ * Fetch a single vehicle by its vehicle_number.
  */
 export async function getVehicleByNumber(
   vehicleNumber: string,
 ): Promise<{ data: Vehicle | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from('vehicle_info')
-      .select('*')
-      .eq('vehicle_number', vehicleNumber);
-
-    if (error) throw error;
-    const item = Array.isArray(data) && data.length > 0 ? (data[0] as Vehicle) : null;
-    return { data: item, error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<Vehicle>(`/vehicles/${encodeURIComponent(vehicleNumber)}`);
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }
 
@@ -47,6 +40,26 @@ export interface CreateVehicleInput {
   permitted_liters: string;
 }
 
+function toNumeric(value: string): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+/** Serializes the legacy form input into the API payload. */
+export function toCreateVehiclePayload(
+  input: CreateVehicleInput,
+): Record<string, unknown> {
+  return {
+    ...input,
+    owner_name: input.owner_name || null,
+    department: input.department || null,
+    organization: input.organization || null,
+    place: input.place || null,
+    current_meter_reading: toNumeric(input.current_meter_reading),
+    permitted_liters: toNumeric(input.permitted_liters),
+  };
+}
+
 /**
  * Insert a new vehicle record.
  */
@@ -54,11 +67,13 @@ export async function createVehicle(
   input: CreateVehicleInput,
 ): Promise<{ error: Error | null }> {
   try {
-    const { error } = await supabase.from('vehicles').insert(input);
-    if (error) throw error;
+    await apiFetch('/vehicles', {
+      method: 'POST',
+      body: toCreateVehiclePayload(input),
+    });
     return { error: null };
-  } catch (error: any) {
-    return { error };
+  } catch (e) {
+    return { error: e as Error };
   }
 }
 
@@ -70,13 +85,12 @@ export async function updateVehicleByNumber(
   updates: Partial<Vehicle>,
 ): Promise<{ error: Error | null }> {
   try {
-    const { error } = await supabase
-      .from('vehicles')
-      .update(updates)
-      .eq('vehicle_number', vehicleNumber);
-    if (error) throw error;
+    await apiFetch(`/vehicles/${encodeURIComponent(vehicleNumber)}`, {
+      method: 'PATCH',
+      body: updates,
+    });
     return { error: null };
-  } catch (error: any) {
-    return { error };
+  } catch (e) {
+    return { error: e as Error };
   }
 }

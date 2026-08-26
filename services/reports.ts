@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 import { MonthlyReport } from '@/types/database';
 
 /**
@@ -9,11 +9,10 @@ export async function getMonthlyReports(): Promise<{
   error: Error | null;
 }> {
   try {
-    const { data, error } = await supabase.from('monthly_reports').select('*');
-    if (error) throw error;
-    return { data: data as MonthlyReport[], error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<MonthlyReport[]>('/reports/monthly');
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }
 
@@ -25,17 +24,12 @@ export async function getMonthlyReportByName(monthName: string): Promise<{
   error: Error | null;
 }> {
   try {
-    const { data, error } = await supabase
-      .from('monthly_reports')
-      .select('*')
-      .eq('month_name', monthName)
-      .limit(1);
-
-    if (error) throw error;
-    const item = Array.isArray(data) && data.length > 0 ? (data[0] as MonthlyReport) : null;
-    return { data: item, error: null };
-  } catch (error: any) {
-    return { data: null, error };
+    const data = await apiFetch<MonthlyReport>(
+      `/reports/monthly/${encodeURIComponent(monthName)}`,
+    );
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }
 
@@ -52,28 +46,27 @@ export async function refreshMonthlyReport(
   input: RefreshMonthlyReportInput,
 ): Promise<{ error: Error | null }> {
   try {
-    const { data, error: fetchError } = await supabase
-      .from('fuel_logs')
-      .select('filled_liters.sum(), filled_liters.count()')
-      .gte('transaction_date', input.firstDatePrev)
-      .lt('transaction_date', input.lastDatePrev);
-
-    if (fetchError) throw fetchError;
-
-    const totalDiesel = (data?.[0] as any)?.sum ?? 0;
-    const totalFills = (data?.[0] as any)?.count ?? 0;
-
-    const { error: upsertError } = await supabase.from('monthly_reports').upsert({
-      month_name: input.period,
-      total_diesel: totalDiesel,
-      total_fills: totalFills,
-      first_date: input.firstDatePrev,
-      last_date: input.lastDatePrev,
+    await apiFetch('/reports/monthly/refresh', {
+      method: 'POST',
+      body: input,
     });
-
-    if (upsertError) throw upsertError;
     return { error: null };
-  } catch (error: any) {
-    return { error };
+  } catch (e) {
+    return { error: e as Error };
+  }
+}
+
+/**
+ * Fetch all yearly report entries.
+ */
+export async function getYearlyReports(): Promise<{
+  data: unknown[] | null;
+  error: Error | null;
+}> {
+  try {
+    const data = await apiFetch<unknown[]>('/reports/yearly');
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e as Error };
   }
 }

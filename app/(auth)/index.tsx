@@ -11,10 +11,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '@/context/AuthProvider';
 
 export default function Login() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,21 +35,14 @@ export default function Login() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (error) {
-      console.error('Login error:', error);
+    try {
+      await signIn(email.trim(), password);
+      router.replace('/(tabs)');
+    } catch {
       setErrorMsg('Invalid email or password');
       setLoading(false);
       return;
     }
-
-    // Auth state listener in AuthProvider fetches profile + navigates
-    // Navigation handled by layout via session detection
-    router.replace('/(tabs)');
   };
 
   return (
@@ -59,7 +53,7 @@ export default function Login() {
       <View style={styles.inner}>
         <View style={styles.imageSection}>
           <Image
-            source="https://ekiedurclpnzdhwftmod.supabase.co/storage/v1/object/sign/Images/bk-removebg-preview.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85YTVmYjQ5MS0xMWIzLTQ5ZmMtYWI1ZS1iZTJiNDJkNGZmMDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvYmstcmVtb3ZlYmctcHJldmlldy5wbmciLCJpYXQiOjE3Njc5NTU4NjAsImV4cCI6MjA4MzMxNTg2MH0.j6zP3mhwixxNHvS39Oges7Y_FlsEOwaCfUesXEUaUw8"
+            source={require('@/assets/images/splash-icon.png')}
             style={styles.logo}
             contentFit="contain"
           />

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { apiFetch, refreshSession } from '@/lib/api';
+import * as authService from '@/services/auth';
 
 export interface UserProfile {
   id: string;
@@ -11,16 +11,18 @@ export interface UserProfile {
 }
 
 interface AuthContextValue {
-  session: Session | null;
+  session: { user: { email: string } | null };
   profile: UserProfile | null;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-  session: null,
+  session: { user: null },
   profile: null,
   loading: true,
+  signIn: async () => {},
   signOut: async () => {},
 });
 
@@ -28,57 +30,32 @@ const PROFILE_STORAGE_KEY = 'user_profile';
 const SESSION_FLAG_KEY = 'is_logged_in';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<AuthContextValue['session']>({ user: null });
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userEmail: string): Promise<UserProfile | null> => {
+  // Best-effort background revalidation against the API.
+  const revalidateProfile = async (): Promise<boolean> => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', userEmail)
-        .single();
-
-      if (error) {
-        console.error('Profile fetch error:', error);
-        return null;
-      }
-
-      if (data) {
-        const profileData: UserProfile = {
-          id: data.id,
-          email: data.email,
-          place: data.place,
-          name: data.name,
-        };
-        await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profileData));
-        return profileData;
-      }
-      return null;
-    } catch (e) {
-      console.error('Profile fetch exception:', e);
-      return null;
+      const data = await apiFetch<UserProfile>('/users/me');
+      await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(data));
+      setProfile(data);
+      return true;
+    } catch {
+      return false;
     }
   };
 
-  const clearProfile = async () => {
+  const clearLocalState = async () => {
     await AsyncStorage.multiRemove([PROFILE_STORAGE_KEY, SESSION_FLAG_KEY]);
     setProfile(null);
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    // onAuthStateChange will fire SIGNED_OUT and clear state
+    setSession({ user: null });
   };
 
   useEffect(() => {
     let mounted = true;
 
     const initialize = async () => {
-      // ─── FAST PATH: check AsyncStorage for cached login flag ───
-      // This is instant (no network) and lets us skip the login page
-      // before Supabase SDK finishes restoring its session.
       try {
         const [loginFlag, cachedProfileJson] = await AsyncStorage.multiGet([
           SESSION_FLAG_KEY,
@@ -91,86 +68,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : null;
 
         if (isLoggedIn && cachedProfile && mounted) {
-          // Immediately unblock the UI — user sees tabs, not login
+          // Instant fast path — unblock UI with cached data.
           setProfile(cachedProfile);
-          setSession({ user: { email: cachedProfile.email } } as unknown as Session);
+          setSession({ user: { email: cachedProfile.email } });
           setLoading(false);
 
-          // Now verify real session from Supabase in the background
-          supabase.auth.getSession().then(async ({ data }) => {
-            if (!mounted) return;
-
-            if (data.session) {
-              // Real session is valid — swap in the real session object
-              setSession(data.session);
-              // Silently refresh profile in background
-              const userEmail = data.session.user.email;
-              if (userEmail) {
-                const freshProfile = await fetchProfile(userEmail);
-                if (mounted && freshProfile) setProfile(freshProfile);
-              }
-            } else {
-              // Session expired — force back to login
-              setSession(null);
-              await clearProfile();
-            }
-          });
-          return; // Fast path done — don't block on Supabase below
+          // Verify the session is actually still valid in the background.
+          const valid = await refreshSession();
+          if (!mounted) return;
+          if (!valid) {
+            await clearLocalState();
+            return;
+          }
+          await revalidateProfile();
+          return;
         }
       } catch {
         // AsyncStorage read failed — fall through to normal path
       }
 
-      // ─── NORMAL PATH: no cached login flag, wait for Supabase ───
-      const { data } = await supabase.auth.getSession();
+      const valid = await refreshSession();
       if (!mounted) return;
 
-      if (data.session) {
-        setSession(data.session);
-
-        // Save login flag + fetch profile
-        await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
-        const userEmail = data.session.user.email;
-        if (userEmail) {
-          const prof = await fetchProfile(userEmail);
-          if (mounted) setProfile(prof);
+      if (valid) {
+        const cachedProfileJson = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+        const cachedProfile = cachedProfileJson
+          ? (JSON.parse(cachedProfileJson) as UserProfile)
+          : null;
+        if (cachedProfile) {
+          setProfile(cachedProfile);
+          setSession({ user: { email: cachedProfile.email } });
+          await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
+          await revalidateProfile();
         }
       } else {
-        setSession(null);
-        await clearProfile();
+        await clearLocalState();
       }
+
       if (mounted) setLoading(false);
     };
 
     initialize();
 
-    // Subscribe to auth state changes (handles fresh login / sign-out)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        if (!mounted) return;
-
-        setSession(newSession);
-
-        if (newSession?.user?.email) {
-          await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
-          const prof = await fetchProfile(newSession.user.email);
-          if (mounted) setProfile(prof);
-        } else {
-          await clearProfile();
-        }
-
-        if (mounted) setLoading(false);
-      }
-    );
-
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    const prof = await authService.login(email.trim(), password);
+    await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
+    await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(prof));
+    setProfile(prof);
+    setSession({ user: { email: prof.email } });
+  };
+
+  const signOut = async () => {
+    await authService.logout();
+    await clearLocalState();
+  };
+
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ session, profile, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

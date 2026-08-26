@@ -48,7 +48,7 @@ async function main(): Promise<void> {
 
   try {
     // Apply the raw SQL dump inside a transaction; fails atomically on error.
-    await prisma.$transaction([$prisma.$executeRawUnsafe(dump)]);
+    await prisma.$transaction([prisma.$executeRawUnsafe(dump)]);
     console.log('Seed applied successfully.');
   } finally {
     await prisma.$disconnect();

@@ -1,19 +1,20 @@
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthProvider';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function AboutScreen() {
   const router = useRouter()
+  const { signOut } = useAuth()
 
   const Logout = async () => {
-    const { error: AuthError } = await supabase.auth.signOut()
-    if (AuthError) {
-      Alert.alert("Can't Logout. Please Try Again")
-    }
-    else if (!AuthError) {
+    try {
+      await signOut()
       Alert.alert("Success", "Logout Successful", [
         { text: "OK", onPress: () => router.replace('/(auth)') }
       ])
+    }
+    catch {
+      Alert.alert("Can't Logout. Please Try Again")
     }
   }
   return (

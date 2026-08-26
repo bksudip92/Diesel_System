@@ -1,7 +1,6 @@
 import { FuelLogWithVehicle, Vehicle } from '@/types/database';
-import { getLastFuelLog } from '@/services/fuel-logs';
+import { createFuelLog, getLastFuelLog } from '@/services/fuel-logs';
 import { getVehicleByNumber } from '@/services/vehicles';
-import { createFuelLog } from '@/services/fuel-logs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -29,7 +28,6 @@ export default function FillFuel() {
   const [loading, setLoading] = useState<boolean>(true);
   const [lastFuelLog, setLastFuelLog] = useState<FuelLogWithVehicle | null>(null);
   const [vehicleInfo, setVehicleInfo] = useState<Vehicle | null>(null);
-  const [vehicleIdFK, setVehicleIdFK] = useState<number | null>(null);
   const [meterReading, setMeterReading] = useState('');
   const [filledLiters, setFilledLiters] = useState('');
 
@@ -59,7 +57,6 @@ export default function FillFuel() {
     if (error) return;
     if (data) {
       setVehicleInfo(data);
-      setVehicleIdFK(data.vehicle_id);
     }
   };
 
@@ -117,16 +114,12 @@ export default function FillFuel() {
           text: 'Submit',
           onPress: async () => {
             const { error } = await createFuelLog({
-              vehicle_id_fk: vehicleIdFK!,
+              vehicle_number: vehicleId!,
               meter_reading: reading,
-              previous_meter_reading: previousReading,
-              calculated_distance: calculatedDistance,
               filled_liters: filled,
-              calculated_efficiency: parseFloat(calculatedEfficiency),
               place,
               transaction_date: new Date().toISOString().slice(0, 10),
               transaction_time: new Date().toLocaleTimeString().slice(16, 24),
-              transaction_timestamp: new Date().toISOString(),
             });
 
             if (error) {
