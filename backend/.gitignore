@@ -11,4 +11,6 @@ src/generated/
 
 # Database dumps from Supabase (may contain PII — never commit)
 prisma/data/
+deploy/.env
 
+!deploy/.env.example
