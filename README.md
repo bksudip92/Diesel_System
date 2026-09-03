@@ -1,50 +1,59 @@
-# Welcome to your Expo app 👋
+# Diesel System — Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native (Expo SDK 54) frontend for the Diesel System: vehicle
+registration, QR-scanned fuel logging, and monthly reporting.
 
-## Get started
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full architecture and
+conventions.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup
 
 ```bash
-npm run reset-project
+npm install
+cp .env.example .env   # then set EXPO_PUBLIC_API_URL
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- Android emulator API URL: `http://10.0.2.2:3000/api/v1`
+- Physical device: use your machine's LAN IP
 
-## Learn more
+## Scripts
 
-To learn more about developing your project with Expo, look at the following resources:
+| Script | Purpose |
+| --- | --- |
+| `npm start` | Expo dev server |
+| `npm run android` / `ios` | Run on a platform |
+| `npm run lint` | ESLint (expo config) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run format` | Prettier over `src/` |
+| `npm run ci:check` | typecheck + format:check (CI gate) |
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Building an APK
 
-## Join the community
+The `preview` profile in `eas.json` produces an installable APK:
 
-Join our community of developers creating universal apps.
+```bash
+npm install -g eas-cli
+eas build -p android --profile preview
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+For a fully local build (requires JDK 17 + Android SDK):
+
+```bash
+npx expo prebuild -p android
+cd android && ./gradlew assembleRelease
+# output: android/app/build/outputs/apk/release/app-release.apk
+```
+
+## Project structure
+
+```
+src/
+├── app/          # expo-router route shells (UI only)
+├── features/     # domain logic: auth, vehicles, fuel-logs, reports
+├── components/ui # design-system primitives
+├── providers/    # AppProviders, AuthProvider, ErrorBoundary
+├── lib/          # api client, env, storage, formatting, errors
+├── theme/        # design tokens
+└── types/        # domain + API types
+```
