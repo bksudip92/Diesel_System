@@ -17,7 +17,8 @@ export const Routes = {
   qrShow: (vehicleNumber: string) => `/qr/${encodeURIComponent(vehicleNumber)}`,
 
   vehicleList: '/vehicles',
-  editVehicle: (vehicleNumber: string) => `/vehicles/edit?vehicle=${encodeURIComponent(vehicleNumber)}`,
+  editVehicle: (vehicleNumber: string) =>
+    `/vehicles/edit?vehicle=${encodeURIComponent(vehicleNumber)}`,
 
   monthlyReports: '/reports/months',
   monthlyReportDetail: (month: string) => `/reports/months/${encodeURIComponent(month)}`,

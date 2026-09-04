@@ -11,7 +11,10 @@ interface SectionLinkProps {
 
 function SectionLink({ label, onPress }: SectionLinkProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.section, pressed && styles.sectionPressed]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [styles.section, pressed && styles.sectionPressed]}
+      onPress={onPress}
+    >
       <Text style={styles.sectionText}>{label}</Text>
     </Pressable>
   );
@@ -23,10 +26,7 @@ export default function ReportsMenu() {
   return (
     <View style={styles.container}>
       <SectionLink label="All Vehicles" onPress={() => router.navigate(Routes.vehicleList)} />
-      <SectionLink
-        label="Monthly Report"
-        onPress={() => router.navigate(Routes.monthlyReports)}
-      />
+      <SectionLink label="Monthly Report" onPress={() => router.navigate(Routes.monthlyReports)} />
     </View>
   );
 }

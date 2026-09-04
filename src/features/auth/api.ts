@@ -1,4 +1,3 @@
-import React from 'react';
 import { apiFetch, ApiRequestError } from '@/src/lib/api-client';
 import { clearTokens, getRefreshToken, storeTokens } from '@/src/lib/secure-storage';
 import type { AuthResponse } from '@/src/types/api';

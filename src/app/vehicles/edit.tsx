@@ -1,6 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useVehicle, useUpdateVehicle } from '@/src/features/vehicles/queries';
 import { LoadingView } from '@/src/components/ui';
 import { getErrorMessage } from '@/src/lib/errors';
@@ -14,7 +22,12 @@ interface EditableField {
 }
 
 const FIELDS: EditableField[] = [
-  { key: 'current_meter_reading', label: 'Current Meter Reading (km)', numeric: true, placeholder: 'e.g. 12000' },
+  {
+    key: 'current_meter_reading',
+    label: 'Current Meter Reading (km)',
+    numeric: true,
+    placeholder: 'e.g. 12000',
+  },
   { key: 'owner_name', label: 'Owner Name', placeholder: 'Enter owner name' },
   { key: 'department', label: 'Department / Organization', placeholder: 'e.g. Construction' },
   { key: 'permitted_liters', label: 'Fuel Limit (Liters)', numeric: true, placeholder: 'e.g. 200' },

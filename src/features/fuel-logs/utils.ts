@@ -15,8 +15,7 @@ export function calculateEfficiency(distance: number, liters: number): number {
 }
 
 export type FuelLogValidation =
-  | { ok: true; meterReading: number; filledLiters: number }
-  | { ok: false; message: string };
+  { ok: true; meterReading: number; filledLiters: number } | { ok: false; message: string };
 
 /** Validates the fill-fuel form. Returns a user-facing message on failure. */
 export function validateFuelLogInput(

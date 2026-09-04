@@ -58,17 +58,12 @@ export default function Dashboard() {
               colors={[colors.primary]}
             />
           }
-          ListEmptyComponent={
-            <EmptyState message="No fuel logs found for your location." />
-          }
+          ListEmptyComponent={<EmptyState message="No fuel logs found for your location." />}
         />
       )}
 
       <View style={styles.buttonContainer}>
-        <Pressable
-          onPress={() => router.navigate(Routes.scanner)}
-          style={() => styles.button}
-        >
+        <Pressable onPress={() => router.navigate(Routes.scanner)} style={() => styles.button}>
           <Text style={styles.buttonText}>Scan QR</Text>
         </Pressable>
       </View>

@@ -1,13 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import type { MonthlyReport } from '@/src/types/models';
 import { useMonthlyReports, useRefreshMonthlyReport } from '@/src/features/reports/queries';
 import { getMonthDateRange, MONTH_NAMES } from '@/src/features/reports/utils';
@@ -24,7 +17,10 @@ interface MonthReportRowProps {
 /** List row — kept outside the renderer so rows are never remounted. */
 function MonthReportRow({ report, onPress }: MonthReportRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      onPress={onPress}
+    >
       <View style={styles.rowHeader}>
         <Text style={styles.monthName}>{report.month_name}</Text>
         <Text style={styles.diesel}>{report.total_diesel} L</Text>
@@ -59,7 +55,12 @@ export default function MonthlyReportsList() {
   }
 
   if (reportsQuery.isError) {
-    return <ErrorState message="Unable to load monthly reports." onRetry={() => reportsQuery.refetch()} />;
+    return (
+      <ErrorState
+        message="Unable to load monthly reports."
+        onRetry={() => reportsQuery.refetch()}
+      />
+    );
   }
 
   return (
@@ -87,7 +88,9 @@ export default function MonthlyReportsList() {
           />
         )}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyState message="No monthly reports yet." hint="Fill fuel to generate reports." />}
+        ListEmptyComponent={
+          <EmptyState message="No monthly reports yet." hint="Fill fuel to generate reports." />
+        }
         refreshControl={
           <RefreshControl
             refreshing={reportsQuery.isRefetching}

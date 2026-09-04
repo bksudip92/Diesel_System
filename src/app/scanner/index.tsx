@@ -28,12 +28,16 @@ export default function VehicleScanner() {
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
-        onBarcodeScanned={scanned ? undefined : ({ data }: { data: string }) => {
-          if (data) {
-            setScanned(true);
-            router.navigate(Routes.fillFuel(data));
-          }
-        }}
+        onBarcodeScanned={
+          scanned
+            ? undefined
+            : ({ data }: { data: string }) => {
+                if (data) {
+                  setScanned(true);
+                  router.navigate(Routes.fillFuel(data));
+                }
+              }
+        }
       />
       {!scanned ? (
         <View style={styles.overlay}>

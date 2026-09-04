@@ -28,10 +28,7 @@ export function AllVehiclesScreen({ onPressVehicle }: AllVehiclesScreenProps) {
 
   if (vehiclesQuery.isError) {
     return (
-      <ErrorState
-        message="Unable to load vehicles."
-        onRetry={() => vehiclesQuery.refetch()}
-      />
+      <ErrorState message="Unable to load vehicles." onRetry={() => vehiclesQuery.refetch()} />
     );
   }
 

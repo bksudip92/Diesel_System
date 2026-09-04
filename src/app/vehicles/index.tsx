@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet } from 'react-native';
 import { AllVehiclesScreen } from '@/src/features/vehicles/components/AllVehiclesScreen';
 import { Routes } from '@/src/navigation/routes';
 import type { Vehicle } from '@/src/types/models';

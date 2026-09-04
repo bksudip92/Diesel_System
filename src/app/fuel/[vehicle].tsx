@@ -52,12 +52,15 @@ export default function FillFuelScreen() {
   const distance = Number.isFinite(parsedMeter)
     ? calculateDistance(parsedMeter, previousReading)
     : 0;
-  const efficiency = calculateEfficiency(distance, Number.isFinite(parsedLiters) ? parsedLiters : 0);
+  const efficiency = calculateEfficiency(
+    distance,
+    Number.isFinite(parsedLiters) ? parsedLiters : 0,
+  );
 
   const remainingAllotment =
     vehicle && Number.isFinite(parsedLiters) && parsedLiters > 0
       ? vehicle.permitted_liters - parsedLiters
-      : vehicle?.permitted_liters ?? null;
+      : (vehicle?.permitted_liters ?? null);
 
   const handleSubmit = () => {
     if (!vehicleNumber) return;
@@ -179,16 +182,12 @@ export default function FillFuelScreen() {
           </View>
 
           <Text style={styles.allotmentNote}>
-            This is a comparison to the vehicle's default monthly limit — it does not
-            decrease your remaining monthly quantity.
+            This is a comparison to the vehicle&apos;s default monthly limit — it does not decrease
+            your remaining monthly quantity.
           </Text>
         </View>
 
-        <AppButton
-          label="Submit Fuel Log"
-          onPress={handleSubmit}
-          loading={createLog.isPending}
-        />
+        <AppButton label="Submit Fuel Log" onPress={handleSubmit} loading={createLog.isPending} />
       </View>
     </ScrollView>
   );

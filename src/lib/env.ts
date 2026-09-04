@@ -9,11 +9,7 @@ import { z } from 'zod';
  */
 
 const envSchema = z.object({
-  EXPO_PUBLIC_API_URL: z
-    .string()
-    .trim()
-    .url()
-    .default('http://10.0.2.2:3000/api/v1'),
+  EXPO_PUBLIC_API_URL: z.string().trim().url().default('http://10.0.2.2:3000/api/v1'),
 });
 
 const parsed = envSchema.safeParse({

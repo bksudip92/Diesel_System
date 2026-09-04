@@ -19,11 +19,9 @@ const MAX_FIELD = 120;
 const MAX_TEXT = 60;
 
 const vehicleFormSchema = z.object({
-  vehicle_number: z
-    .string()
-    .refine((v) => normalizeVehicleNumber(v) !== null, {
-      message: 'Enter a valid 10-character vehicle number, e.g. KA05MJ6100',
-    }),
+  vehicle_number: z.string().refine((v) => normalizeVehicleNumber(v) !== null, {
+    message: 'Enter a valid 10-character vehicle number, e.g. KA05MJ6100',
+  }),
   vehicle_name: z.string().min(1, 'Vehicle name is required').max(MAX_TEXT),
   vehicle_type: z.string().min(1, 'Vehicle type is required').max(MAX_TEXT),
   vehicle_class: z.string().min(1, 'Vehicle class is required').max(MAX_TEXT),
@@ -56,7 +54,7 @@ const EMPTY_FORM: VehicleFormValues = {
 
 type FieldName = keyof VehicleFormValues;
 
-const TEXT_FIELDS: Array<{ name: FieldName; label: string }> = [
+const TEXT_FIELDS: { name: FieldName; label: string }[] = [
   { name: 'vehicle_name', label: 'Vehicle Name' },
   { name: 'vehicle_type', label: 'Vehicle Type' },
   { name: 'vehicle_class', label: 'Vehicle Class' },
@@ -199,4 +197,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 });
-

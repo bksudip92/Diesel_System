@@ -34,7 +34,12 @@ function MonthReportContent({ monthName }: { monthName: string }) {
   }
 
   if (isError) {
-    return <ErrorState message="Unable to load this month's report." onRetry={() => logsQuery.refetch()} />;
+    return (
+      <ErrorState
+        message="Unable to load this month's report."
+        onRetry={() => logsQuery.refetch()}
+      />
+    );
   }
 
   const report = reportQuery.data;
