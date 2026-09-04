@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVED (Sept 2026):** Task list for the original build, kept for
+> history. Current architecture documentation lives in
+> [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+
 # Refactoring Tasks
 
 ## Phase 1: Dead Code Cleanup
