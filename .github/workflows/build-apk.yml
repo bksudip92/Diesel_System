@@ -1,0 +1,61 @@
+name: Build Android APK
+
+on:
+  # Manual trigger: Actions tab -> "Build Android APK" -> "Run workflow"
+  workflow_dispatch:
+  # Builds automatically on pushes to these branches
+  push:
+    branches:
+      - main
+      - refactor/frontend-architecture
+
+# Cancel superseded runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup JDK 17 (Gradle cache included)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env
+        run: |
+          echo "EXPO_PUBLIC_API_URL=${{ secrets.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api/v1' }}" > .env
+
+      - name: Generate native Android project (expo prebuild)
+        run: npx expo prebuild -p android --no-install
+
+      - name: Build release APK
+        run: >
+          cd android
+          && ./gradlew assembleRelease
+          -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+          --no-daemon
+          --console=plain
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Diesel-System-APK
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

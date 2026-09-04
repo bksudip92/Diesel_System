@@ -30,7 +30,12 @@ npm start
 
 ## Building an APK
 
-The `preview` profile in `eas.json` produces an installable APK:
+**GitHub Actions (recommended):** every push to `main` or
+`refactor/frontend-architecture` builds a signed APK automatically —
+download it from the run's **Artifacts** (`Diesel-System-APK`) on the
+Actions tab, or trigger it manually via *Run workflow*.
+
+**EAS cloud build** (`preview` profile in `eas.json` produces an APK):
 
 ```bash
 npm install -g eas-cli
