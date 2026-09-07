@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVED (Sept 2026):** This was the *pre-refactor* audit/plan. The
+> refactor it proposed is complete on branch `refactor/frontend-architecture`
+> — see [ARCHITECTURE.md](./ARCHITECTURE.md) for the implemented architecture.
+
+
 # Full Codebase Refactoring & Optimization Plan
 
 A senior-level audit of the Diesel System app. This plan covers **dead code removal**, **folder restructuring**, **type safety**, **data layer separation**, **design system**, **performance fixes**, and **UX improvements** — modeled after how production React Native projects are structured.
