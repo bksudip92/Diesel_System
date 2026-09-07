@@ -57,55 +57,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initialize = async () => {
       try {
-        const [loginFlag, cachedProfileJson] = await AsyncStorage.multiGet([
-          SESSION_FLAG_KEY,
-          PROFILE_STORAGE_KEY,
-        ]);
+        // Validate the refresh token FIRST — never trust the cached flag alone.
+        // The old code set a session from AsyncStorage before this check, so a
+        // stale install (or an unreachable backend) landed straight on (tabs).
+        const valid = await refreshSession();
+        if (!mounted) return;
 
-        const isLoggedIn = loginFlag[1] === 'true';
-        const cachedProfile = cachedProfileJson[1]
-          ? (JSON.parse(cachedProfileJson[1]) as UserProfile)
-          : null;
-
-        if (isLoggedIn && cachedProfile && mounted) {
-          // Instant fast path — unblock UI with cached data.
-          setProfile(cachedProfile);
-          setSession({ user: { email: cachedProfile.email } });
-          setLoading(false);
-
-          // Verify the session is actually still valid in the background.
-          const valid = await refreshSession();
-          if (!mounted) return;
-          if (!valid) {
-            await clearLocalState();
-            return;
-          }
-          await revalidateProfile();
+        if (!valid) {
+          await clearLocalState();
           return;
         }
-      } catch {
-        // AsyncStorage read failed — fall through to normal path
-      }
 
-      const valid = await refreshSession();
-      if (!mounted) return;
-
-      if (valid) {
         const cachedProfileJson = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
         const cachedProfile = cachedProfileJson
           ? (JSON.parse(cachedProfileJson) as UserProfile)
           : null;
-        if (cachedProfile) {
-          setProfile(cachedProfile);
-          setSession({ user: { email: cachedProfile.email } });
-          await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
-          await revalidateProfile();
-        }
-      } else {
-        await clearLocalState();
-      }
 
-      if (mounted) setLoading(false);
+        if (cachedProfile) {
+          if (mounted) {
+            setProfile(cachedProfile);
+            setSession({ user: { email: cachedProfile.email } });
+            await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
+          }
+          // Best-effort refresh of profile data; failure keeps cached session.
+          await revalidateProfile();
+        } else {
+          // Tokens are valid but we have no cached profile — fetch it.
+          // Failure here means we can't build a session, so force login.
+          const ok = await revalidateProfile();
+          if (!ok) {
+            await clearLocalState();
+          } else if (mounted) {
+            const fresh = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+            if (fresh) {
+              await AsyncStorage.setItem(SESSION_FLAG_KEY, 'true');
+              const prof = JSON.parse(fresh) as UserProfile;
+              setSession({ user: { email: prof.email } });
+            } else {
+              await clearLocalState();
+            }
+          }
+        }
+      } catch {
+        // Any unexpected failure (storage I/O, etc.) → force login screen.
+        try {
+          await clearLocalState();
+        } catch {
+          setProfile(null);
+          setSession({ user: null });
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
     initialize();

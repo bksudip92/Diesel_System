@@ -57,14 +57,25 @@ export async function refreshSession(): Promise<boolean> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) return false;
 
-  const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    // Network unreachable (e.g. phone can't reach 10.0.2.2, server down).
+    // Don't wipe stored tokens — just report "not validated".
+    return false;
+  }
 
   if (!res.ok) {
-    await clearTokens();
+    // Only discard local tokens when the server definitively rejects them.
+    // A 500/network blip must not log the user out or clear state.
+    if (res.status === 401 || res.status === 403) {
+      await clearTokens();
+    }
     return false;
   }
 
