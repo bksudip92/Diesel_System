@@ -1,5 +1,5 @@
 import { ApiErrorBody } from '@/src/types/api';
-import { env } from '@/src/lib/env';
+import { getApiUrl } from '@/src/lib/env';
 import {
   clearTokens,
   getAccessToken,
@@ -26,7 +26,7 @@ export async function refreshSession(): Promise<boolean> {
   if (!refreshToken) return false;
 
   try {
-    const res = await fetch(`${env.apiUrl}/auth/refresh`, {
+    const res = await fetch(`${getApiUrl()}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -75,7 +75,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    return fetch(`${env.apiUrl}${path}`, {
+    return fetch(`${getApiUrl()}${path}`, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
