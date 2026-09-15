@@ -40,7 +40,7 @@ export default function RootLayout() {
           screenOptions={{ headerTitleStyle: { color: colors.textPrimary } }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
           <Stack.Screen

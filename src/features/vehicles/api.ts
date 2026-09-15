@@ -19,10 +19,10 @@ export interface CreateVehicleInput {
   vehicle_name: string;
   vehicle_type: string;
   vehicle_class: string;
-  owner_name: string;
-  place: string;
-  organization: string;
-  department: string;
+  owner_name: string | null;
+  place: string | null;
+  organization: string | null;
+  department: string | null;
   current_meter_reading: number;
   permitted_liters: number;
 }

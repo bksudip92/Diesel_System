@@ -3,7 +3,7 @@ import React from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import type { FuelLog } from '@/src/types/models';
 import { useMonthlyReport } from '@/src/features/reports/queries';
-import { isMonthName, getMonthDateRange } from '@/src/features/reports/utils';
+import { getMonthDateRangeForYear, parsePeriodParam } from '@/src/features/reports/utils';
 import { useLogsByDateRange } from '@/src/features/fuel-logs/queries';
 import { MonthLogCard } from '@/src/features/fuel-logs/components/MonthLogCard';
 import { EmptyState, ErrorState, ListSeparator, LoadingView } from '@/src/components/ui';
@@ -11,19 +11,20 @@ import { colors, radius, shadow, spacing } from '@/src/theme/tokens';
 
 export default function MonthReportDetail() {
   const params = useLocalSearchParams<{ name?: string | string[] }>();
-  const monthParam = Array.isArray(params.name) ? params.name[0] : params.name;
-  const monthName = monthParam && isMonthName(monthParam) ? monthParam : null;
+  const periodParam = Array.isArray(params.name) ? params.name[0] : params.name;
+  // The list screen navigates with the full backend key ("September 2025").
+  const parsed = parsePeriodParam(periodParam);
 
-  if (!monthName) {
-    return <ErrorState message={`Unknown month: ${monthParam ?? ''}`} />;
+  if (!parsed) {
+    return <ErrorState message={`Unknown month: ${periodParam ?? ''}`} />;
   }
 
-  return <MonthReportContent monthName={monthName} />;
+  return <MonthReportContent period={parsed.period} month={parsed.month} year={parsed.year} />;
 }
 
-function MonthReportContent({ monthName }: { monthName: string }) {
-  const range = getMonthDateRange(monthName as Parameters<typeof getMonthDateRange>[0]);
-  const reportQuery = useMonthlyReport(monthName);
+function MonthReportContent({ period, month, year }: { period: string; month: string; year: number }) {
+  const range = getMonthDateRangeForYear(month as Parameters<typeof getMonthDateRangeForYear>[0], year);
+  const reportQuery = useMonthlyReport(period);
   const logsQuery = useLogsByDateRange(range.firstDatePrev, range.endDateExclusive);
 
   const isPending = reportQuery.isPending || logsQuery.isPending;
@@ -47,7 +48,7 @@ function MonthReportContent({ monthName }: { monthName: string }) {
 
   const summary = (
     <View style={styles.summaryCard}>
-      <Text style={styles.summaryMonth}>{monthName}</Text>
+      <Text style={styles.summaryMonth}>{period}</Text>
       <View style={styles.summaryStats}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Total Diesel</Text>

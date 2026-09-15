@@ -43,9 +43,11 @@ export default function MonthlyReportsList() {
   const currentRange = getMonthDateRange(MONTH_NAMES[new Date().getMonth()]);
 
   const handleRefreshAggregates = () => {
+    // Backend aggregates half-open [first, last): send the exclusive end so
+    // the last day of the month is included in the totals.
     refreshReport.mutate({
       firstDatePrev: currentRange.firstDatePrev,
-      lastDatePrev: currentRange.lastDatePrev,
+      lastDatePrev: currentRange.endDateExclusive,
       period: currentRange.period,
     });
   };

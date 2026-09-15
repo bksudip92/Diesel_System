@@ -22,7 +22,7 @@ export async function login(email: string, password: string): Promise<UserProfil
     id: res.user.id,
     email: res.user.email,
     place: res.user.place,
-    name: res.user.name ?? undefined,
+    name: res.user.name,
   };
 }
 
@@ -43,5 +43,8 @@ export { getRefreshToken, ApiRequestError };
 
 /** Fetches the signed-in user's profile. */
 export async function fetchProfile(): Promise<UserProfile> {
-  return apiFetch<UserProfile>('/users/me');
+  const raw = await apiFetch<{ id: string; email: string; place: string; name: string | null }>(
+    '/users/me',
+  );
+  return { id: raw.id, email: raw.email, place: raw.place, name: raw.name ?? null };
 }

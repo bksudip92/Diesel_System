@@ -3,12 +3,12 @@
  * and are the ONLY place where these shapes are defined.
  */
 
-/** The `users` table (as returned by GET /users/me). */
+/** The `users` table (as returned by GET /users/me). `name` is nullable in the DB. */
 export interface UserProfile {
   id: string;
   email: string;
   place: string;
-  name?: string;
+  name: string | null;
 }
 
 /** The `vehicles` table. */
@@ -51,7 +51,7 @@ export interface FuelLogFlat {
   id: number;
   filled_liters: number;
   calculated_efficiency: number | null;
-  calculated_distance?: number;
+  calculated_distance: number;
   transaction_timestamp: string;
   place: string;
   /** Joined vehicle number string. */
