@@ -6,12 +6,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/src/providers';
+import { BackendResponsePanel } from '@/src/components/ui/BackendResponsePanel';
 import { Routes } from '@/src/navigation/routes';
 import { colors, radius, spacing } from '@/src/theme/tokens';
 
@@ -51,7 +53,7 @@ export default function Login() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.inner}>
+      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
         <View style={styles.imageSection}>
           <Image
             source={require('@/assets/images/splash-icon.png')}
@@ -112,8 +114,9 @@ export default function Login() {
               <Text style={styles.buttonText}>Login</Text>
             )}
           </Pressable>
+          <BackendResponsePanel />
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -124,9 +127,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   inner: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl - 16,
+    paddingVertical: spacing.xl,
   },
   imageSection: {
     alignItems: 'center',

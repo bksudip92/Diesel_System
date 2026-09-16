@@ -7,6 +7,7 @@ import {
   storeTokens,
 } from '@/src/lib/secure-storage';
 import { debugLog } from '@/src/lib/debug';
+import { recordApiDebugEntry, redactSensitive } from '@/src/lib/api-debug';
 
 /** Thrown for every non-2xx API response. `code` matches the backend error codes. */
 export class ApiRequestError extends Error {
@@ -84,24 +85,67 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   };
 
   let token = anonymous ? null : await getAccessToken();
-  let res = await doFetch(token);
+  const baseUrl = getApiUrl();
+  const startedAt = Date.now();
 
-  if (res.status === 401 && !anonymous) {
-    debugLog('401 received — attempting token refresh');
-    const refreshed = await refreshSession();
-    if (refreshed) {
-      token = await getAccessToken();
-      res = await doFetch(token);
+  let res: Response;
+  try {
+    res = await doFetch(token);
+
+    if (res.status === 401 && !anonymous) {
+      debugLog('401 received — attempting token refresh');
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        token = await getAccessToken();
+        res = await doFetch(token);
+      }
     }
+  } catch (networkError) {
+    // Offline / DNS / aborted — surface it on-screen instead of failing silently.
+    recordApiDebugEntry({
+      method,
+      path,
+      url: `${baseUrl}${path}`,
+      requestBody: redactSensitive(body),
+      status: null,
+      ok: false,
+      durationMs: Date.now() - startedAt,
+      responseBody: null,
+      errorCode: 'NETWORK_ERROR',
+      errorMessage: networkError instanceof Error ? networkError.message : 'Network request failed',
+    });
+    throw networkError;
   }
 
   if (res.status === 204) {
+    recordApiDebugEntry({
+      method,
+      path,
+      url: `${baseUrl}${path}`,
+      requestBody: redactSensitive(body),
+      status: res.status,
+      ok: true,
+      durationMs: Date.now() - startedAt,
+      responseBody: null,
+    });
     return undefined as T;
   }
 
   const json = (await res.json().catch(() => null)) as ApiErrorBody | null;
 
   if (!res.ok) {
+    recordApiDebugEntry({
+      method,
+      path,
+      url: `${baseUrl}${path}`,
+      requestBody: redactSensitive(body),
+      status: res.status,
+      ok: false,
+      durationMs: Date.now() - startedAt,
+      responseBody: json,
+      errorCode: json?.error?.code ?? 'UNKNOWN',
+      errorMessage: json?.error?.message ?? `Request failed (${res.status})`,
+    });
     throw new ApiRequestError(
       res.status,
       json?.error?.code ?? 'UNKNOWN',
@@ -109,5 +153,15 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     );
   }
 
+  recordApiDebugEntry({
+    method,
+    path,
+    url: `${baseUrl}${path}`,
+    requestBody: redactSensitive(body),
+    status: res.status,
+    ok: true,
+    durationMs: Date.now() - startedAt,
+    responseBody: redactSensitive(json),
+  });
   return json as T;
 }
