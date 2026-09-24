@@ -11,7 +11,7 @@
  * is why an empty value used to crash release builds on startup.
  */
 
-const FALLBACK_API_URL = 'http://10.0.2.2:3000/api/v1'; // emulator-only
+const FALLBACK_API_URL = 'http://35.193.94.201/api/v1'; // emulator-only
 
 let cachedApiUrl: string | null = null;
 
