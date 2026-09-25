@@ -19,9 +19,9 @@ docker compose -f docker-compose.prod.yml --env-file deploy/.env build
 echo "==> Starting services (migrations run inside the api container)"
 docker compose -f docker-compose.prod.yml --env-file deploy/.env up -d
 
-echo "==> Waiting for health check"
+echo "==> Waiting for health check (via public HTTPS endpoint)"
 for i in $(seq 1 30); do
-  if curl -fsS http://localhost/health > /dev/null 2>&1; then
+  if curl -fsS https://35-193-94-201.sslip.io/health > /dev/null 2>&1; then
     echo "==> Deploy successful — healthy after ${i} attempt(s)"
     docker image prune -f > /dev/null
     exit 0

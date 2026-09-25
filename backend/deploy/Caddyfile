@@ -1,0 +1,14 @@
+# Caddy edge proxy — automatic HTTPS via Let's Encrypt.
+#
+# 35-193-94-201.sslip.io resolves to 35.193.94.201, so Caddy can
+# complete the HTTP-01 challenge and serve a publicly trusted cert.
+# Ports 80 + 443 must be reachable from the internet.
+#
+# Parity with the old nginx setup (gzip + forward headers) is built in:
+# `encode gzip` replaces gzip on; X-Forwarded-For/Proto are set automatically.
+
+35-193-94-201.sslip.io {
+	encode gzip
+
+	reverse_proxy api:3000
+}
