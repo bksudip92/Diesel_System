@@ -11,7 +11,7 @@
  * is why an empty value used to crash release builds on startup.
  */
 
-const FALLBACK_API_URL = 'https://35.193.94.201.sslip.io/api/v1'; // emulator-only
+const FALLBACK_API_URL = 'https://35-193-94-201.sslip.io/api/v1'; // emulator-only
 
 let cachedApiUrl: string | null = null;
 

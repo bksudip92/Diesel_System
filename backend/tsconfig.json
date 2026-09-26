@@ -13,6 +13,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    // Prisma 7 generates a TS client whose internal imports may use `.ts`
+    // extensions. Without rewriting, tsc emits those verbatim into dist/
+    // and Node ESM crashes at startup with ERR_MODULE_NOT_FOUND
+    // (e.g. dist/generated/prisma/internal/class.ts). These two flags make
+    // tsc rewrite them to `.js` so the built image always boots.
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "typeRoots": ["./node_modules/@types"],
     "types": ["node"],
     "declaration": false,
