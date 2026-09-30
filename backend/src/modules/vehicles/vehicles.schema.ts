@@ -1,15 +1,16 @@
 import { z } from 'zod';
+import { vehicleNumberSchema } from '../../utils/vehicleNumber.js';
 
 export const listVehiclesQuerySchema = z.object({
   place: z.string().trim().min(1).optional(),
 });
 
 export const vehicleNumberParamSchema = z.object({
-  number: z.string().trim().min(1),
+  number: vehicleNumberSchema,
 });
 
 export const createVehicleSchema = z.object({
-  vehicle_number: z.string().trim().min(1),
+  vehicle_number: vehicleNumberSchema,
   vehicle_name: z.string().trim().min(1),
   vehicle_type: z.string().trim().min(1),
   vehicle_class: z.string().trim().min(1),

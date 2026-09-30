@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { vehicleNumberSchema } from '../../utils/vehicleNumber.js';
 
 export const recentLogsQuerySchema = z.object({
   place: z.string().trim().min(1),
@@ -6,7 +7,7 @@ export const recentLogsQuerySchema = z.object({
 });
 
 export const lastLogQuerySchema = z.object({
-  vehicleNumber: z.string().trim().min(1),
+  vehicleNumber: vehicleNumberSchema,
 });
 
 export const dateRangeQuerySchema = z.object({
@@ -15,12 +16,14 @@ export const dateRangeQuerySchema = z.object({
 });
 
 export const createFuelLogSchema = z.object({
-  vehicle_number: z.string().trim().min(1),
+  vehicle_number: vehicleNumberSchema,
   meter_reading: z.coerce.number().positive(),
   filled_liters: z.coerce.number().positive(),
   place: z.string().trim().min(1),
   transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'transaction_date must be YYYY-MM-DD'),
-  transaction_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'transaction_time must be HH:MM[:SS]'),
+  transaction_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'transaction_time must be HH:MM[:SS]'),
 });
 
 export type RecentLogsQuery = z.infer<typeof recentLogsQuerySchema>;

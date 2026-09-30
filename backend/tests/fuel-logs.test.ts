@@ -10,17 +10,15 @@ import {
 
 async function seedVehicle(ctx: TestContext, meter: number): Promise<void> {
   const res = await authed(
-    request(ctx.app)
-      .post('/api/v1/vehicles')
-      .send({
-        vehicle_number: 'KA-05-FL0001',
-        vehicle_name: 'Fuel Truck',
-        vehicle_type: 'Truck',
-        vehicle_class: 'Heavy',
-        place: 'Depot A',
-        current_meter_reading: meter,
-        permitted_liters: 60,
-      }),
+    request(ctx.app).post('/api/v1/vehicles').send({
+      vehicle_number: 'KA-05-FL0001',
+      vehicle_name: 'Fuel Truck',
+      vehicle_type: 'Truck',
+      vehicle_class: 'Heavy',
+      place: 'Depot A',
+      current_meter_reading: meter,
+      permitted_liters: 60,
+    }),
     ctx.token,
   );
   expect(res.status).toBe(201);
@@ -45,16 +43,14 @@ describe('fuel-logs', () => {
     await seedVehicle(ctx, 10_000);
 
     const res = await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'KA-05-FL0001',
-          meter_reading: 10_300,
-          filled_liters: 25,
-          place: 'Depot A',
-          transaction_date: '2026-08-23',
-          transaction_time: '09:45',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'KA-05-FL0001',
+        meter_reading: 10_300,
+        filled_liters: 25,
+        place: 'Depot A',
+        transaction_date: '2026-08-23',
+        transaction_time: '09:45',
+      }),
       ctx.token,
     );
 
@@ -64,10 +60,7 @@ describe('fuel-logs', () => {
     expect(res.body.calculated_efficiency).toBeCloseTo(12);
     expect(res.body.transaction_time).toBe('09:45:00');
 
-    const vehicle = await authed(
-      request(ctx.app).get('/api/v1/vehicles/KA-05-FL0001'),
-      ctx.token,
-    );
+    const vehicle = await authed(request(ctx.app).get('/api/v1/vehicles/KA-05-FL0001'), ctx.token);
     expect(vehicle.body.current_meter_reading).toBe(10_300);
   });
 
@@ -75,16 +68,14 @@ describe('fuel-logs', () => {
     await seedVehicle(ctx, 10_000);
 
     const res = await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'KA-05-FL0001',
-          meter_reading: 9_900,
-          filled_liters: 20,
-          place: 'Depot A',
-          transaction_date: '2026-08-23',
-          transaction_time: '10:00',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'KA-05-FL0001',
+        meter_reading: 9_900,
+        filled_liters: 20,
+        place: 'Depot A',
+        transaction_date: '2026-08-23',
+        transaction_time: '10:00',
+      }),
       ctx.token,
     );
     expect(res.status).toBe(422);
@@ -93,16 +84,14 @@ describe('fuel-logs', () => {
 
   it('rejects unknown vehicles', async () => {
     const res = await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'GHOST-01',
-          meter_reading: 100,
-          filled_liters: 5,
-          place: 'Depot A',
-          transaction_date: '2026-08-23',
-          transaction_time: '10:00',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'GHOST-01',
+        meter_reading: 100,
+        filled_liters: 5,
+        place: 'Depot A',
+        transaction_date: '2026-08-23',
+        transaction_time: '10:00',
+      }),
       ctx.token,
     );
     expect(res.status).toBe(422);
@@ -112,16 +101,14 @@ describe('fuel-logs', () => {
     await seedVehicle(ctx, 0);
 
     await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'KA-05-FL0001',
-          meter_reading: 100,
-          filled_liters: 10,
-          place: 'Depot A',
-          transaction_date: '2026-08-23',
-          transaction_time: '08:00',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'KA-05-FL0001',
+        meter_reading: 100,
+        filled_liters: 10,
+        place: 'Depot A',
+        transaction_date: '2026-08-23',
+        transaction_time: '08:00',
+      }),
       ctx.token,
     );
 
@@ -137,16 +124,14 @@ describe('fuel-logs', () => {
   it('returns the last log via fuel_logs_with_vehicle view', async () => {
     await seedVehicle(ctx, 500);
     await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'KA-05-FL0001',
-          meter_reading: 600,
-          filled_liters: 8,
-          place: 'Depot A',
-          transaction_date: '2026-08-23',
-          transaction_time: '12:00',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'KA-05-FL0001',
+        meter_reading: 600,
+        filled_liters: 8,
+        place: 'Depot A',
+        transaction_date: '2026-08-23',
+        transaction_time: '12:00',
+      }),
       ctx.token,
     );
 
@@ -159,32 +144,44 @@ describe('fuel-logs', () => {
     expect(res.body.vehicle_number).toBe('KA-05-FL0001');
   });
 
+  it('does not emit a cacheable ETag on the last-log lookup', async () => {
+    await seedVehicle(ctx, 500);
+
+    const res = await authed(
+      request(ctx.app).get('/api/v1/fuel-logs/last?vehicleNumber=KA-05-FL0001'),
+      ctx.token,
+    );
+
+    // The "no previous log" body is a 4-byte literal `null`, so every vehicle
+    // without logs used to share one ETag. A client revalidating that got a
+    // bodyless 304, which `src/lib/api-client.ts` cannot read — it threw
+    // "Request failed (304)" and the fill-fuel screen never resolved.
+    expect(res.headers.etag).toBeUndefined();
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+
   it('filters logs by date range [from, to)', async () => {
     await seedVehicle(ctx, 1_000);
     await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'KA-05-FL0001',
-          meter_reading: 1_100,
-          filled_liters: 5,
-          place: 'Depot A',
-          transaction_date: '2026-07-31',
-          transaction_time: '06:00',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'KA-05-FL0001',
+        meter_reading: 1_100,
+        filled_liters: 5,
+        place: 'Depot A',
+        transaction_date: '2026-07-31',
+        transaction_time: '06:00',
+      }),
       ctx.token,
     );
     await authed(
-      request(ctx.app)
-        .post('/api/v1/fuel-logs')
-        .send({
-          vehicle_number: 'KA-05-FL0001',
-          meter_reading: 1_200,
-          filled_liters: 5,
-          place: 'Depot A',
-          transaction_date: '2026-08-02',
-          transaction_time: '07:00',
-        }),
+      request(ctx.app).post('/api/v1/fuel-logs').send({
+        vehicle_number: 'KA-05-FL0001',
+        meter_reading: 1_200,
+        filled_liters: 5,
+        place: 'Depot A',
+        transaction_date: '2026-08-02',
+        transaction_time: '07:00',
+      }),
       ctx.token,
     );
 

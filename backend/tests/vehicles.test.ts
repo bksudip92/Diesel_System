@@ -34,10 +34,7 @@ describe('vehicles', () => {
   });
 
   it('creates a vehicle', async () => {
-    const res = await authed(
-      request(ctx.app).post('/api/v1/vehicles').send(VEHICLE),
-      ctx.token,
-    );
+    const res = await authed(request(ctx.app).post('/api/v1/vehicles').send(VEHICLE), ctx.token);
     expect(res.status).toBe(201);
     expect(res.body.vehicle_number).toBe(VEHICLE.vehicle_number);
   });
@@ -45,7 +42,9 @@ describe('vehicles', () => {
   it('rejects duplicate vehicle numbers with 409', async () => {
     await authed(request(ctx.app).post('/api/v1/vehicles').send(VEHICLE), ctx.token);
     const res = await authed(
-      request(ctx.app).post('/api/v1/vehicles').send({ ...VEHICLE, vehicle_name: 'Copy' }),
+      request(ctx.app)
+        .post('/api/v1/vehicles')
+        .send({ ...VEHICLE, vehicle_name: 'Copy' }),
       ctx.token,
     );
     expect(res.status).toBe(409);
@@ -86,12 +85,31 @@ describe('vehicles', () => {
     expect(res.body.current_meter_reading).toBe(5000);
   });
 
-  it('returns 404 for unknown vehicle', async () => {
+  it('returns 404 for a well-formed but unknown vehicle', async () => {
+    const res = await authed(request(ctx.app).get('/api/v1/vehicles/ZZ-99-9999'), ctx.token);
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 422 for a vehicle number that is not plate-shaped', async () => {
+    // A stray character must be rejected at the edge rather than reaching the
+    // database and coming back as a misleading 404.
     const res = await authed(
-      request(ctx.app).get('/api/v1/vehicles/NOPE'),
+      request(ctx.app).get(`/api/v1/vehicles/${encodeURIComponent('UP-93-AB-1234!')}`),
       ctx.token,
     );
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('matches a vehicle regardless of dash placement and casing', async () => {
+    await authed(request(ctx.app).post('/api/v1/vehicles').send(VEHICLE), ctx.token);
+
+    const res = await authed(
+      request(ctx.app).get(`/api/v1/vehicles/${VEHICLE.vehicle_number.toLowerCase()}`),
+      ctx.token,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.vehicle_number).toBe(VEHICLE.vehicle_number);
   });
 
   it('updates a vehicle and returns the fresh row', async () => {

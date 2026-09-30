@@ -28,6 +28,20 @@ export function createApp(env: Env, deps: AppDeps): Express {
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
 
+  // Every response here is either authenticated per-user data or a login
+  // probe, so nothing is safe to store in a shared/intermediary cache.
+  // Express otherwise derives a weak ETag from the body and answers a
+  // matching `If-None-Match` with a bodyless 304 — which `/fuel-logs/last`
+  // hits constantly, because "no previous log" is always the 4-byte literal
+  // `null` and therefore always carries the same ETag for every vehicle.
+  // The client cannot read a 304 (see `src/lib/api-client.ts`), so the fill
+  // fuel form failed to resolve whenever the device HTTP cache revalidated.
+  app.set('etag', false);
+  app.use((_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
   app.use(helmet());
   app.use(
     cors({

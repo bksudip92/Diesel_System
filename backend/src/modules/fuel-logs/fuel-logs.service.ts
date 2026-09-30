@@ -1,5 +1,6 @@
 import type { FuelLog, PrismaClient } from '../../generated/prisma/client.js';
 import { UnprocessableEntityError } from '../../utils/appError.js';
+import { normalizeVehicleNumberKey } from '../../utils/vehicleNumber.js';
 import type { CreateFuelLogInput, DateRangeQuery, RecentLogsQuery } from './fuel-logs.schema.js';
 
 export interface FuelLogWithVehicleNumber extends FuelLog {
@@ -53,7 +54,19 @@ export class FuelLogsService {
       WHERE "vehicle_number" = ${vehicleNumber}
       ORDER BY "meter_reading" DESC
       LIMIT 1`;
-    return rows[0] ?? null;
+
+    if (rows[0]) return rows[0];
+
+    // Same separator/case tolerance as VehiclesService.getByNumber, so a scan
+    // that resolves to the vehicle also resolves to its previous log.
+    const normalized = normalizeVehicleNumberKey(vehicleNumber);
+    const fuzzyRows = await this.prisma.$queryRaw<FuelLogWithVehicleNumber[]>`
+      SELECT * FROM "fuel_logs_with_vehicle"
+      WHERE UPPER(REPLACE("vehicle_number", '-', '')) = ${normalized}
+      ORDER BY "meter_reading" DESC
+      LIMIT 1`;
+
+    return fuzzyRows[0] ?? null;
   }
 
   async listByDateRange(query: DateRangeQuery): Promise<FuelLog[]> {
@@ -76,7 +89,9 @@ export class FuelLogsService {
    */
   async create(input: CreateFuelLogInput): Promise<FuelLogWithVehicleNumber> {
     return this.prisma.$transaction(async (tx) => {
-      const rows = await tx.$queryRaw<{ vehicle_id: number; vehicle_number: string; current_meter_reading: number }[]>`
+      const rows = await tx.$queryRaw<
+        { vehicle_id: number; vehicle_number: string; current_meter_reading: number }[]
+      >`
         SELECT "vehicle_id", "vehicle_number", "current_meter_reading"
         FROM "vehicles"
         WHERE "vehicle_number" = ${input.vehicle_number}
@@ -92,9 +107,8 @@ export class FuelLogsService {
       }
 
       const calculatedDistance = input.meter_reading - previousMeterReading;
-      const calculatedEfficiency = input.filled_liters > 0
-        ? calculatedDistance / input.filled_liters
-        : null;
+      const calculatedEfficiency =
+        input.filled_liters > 0 ? calculatedDistance / input.filled_liters : null;
 
       const transactionTimestamp = `${input.transaction_date}T${normalizeTime(input.transaction_time)}`;
 

@@ -1,9 +1,7 @@
 import type { Prisma, PrismaClient, Vehicle } from '../../generated/prisma/client.js';
 import { ConflictError, NotFoundError } from '../../utils/appError.js';
-import type {
-  CreateVehicleInput,
-  UpdateVehicleInput,
-} from './vehicles.schema.js';
+import { normalizeVehicleNumberKey } from '../../utils/vehicleNumber.js';
+import type { CreateVehicleInput, UpdateVehicleInput } from './vehicles.schema.js';
 
 export class VehiclesService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -18,11 +16,26 @@ export class VehiclesService {
   /**
    * Looks up a vehicle through the `vehicle_info` view to preserve parity
    * with the legacy Supabase query path.
+   *
+   * A QR payload is not guaranteed to match the stored dash layout or casing
+   * (a code can read back as "ka01test" even when the row is "KA-01-TEST"), so
+   * an exact miss is retried with a separator/case-insensitive comparison.
+   * The exact match stays first so the unique index on `vehicle_number`
+   * keeps serving the common path.
    */
   async getByNumber(vehicleNumber: string): Promise<Vehicle> {
     const rows = await this.prisma.$queryRaw<Vehicle[]>`
       SELECT * FROM "vehicle_info" WHERE "vehicle_number" = ${vehicleNumber} LIMIT 1`;
-    const vehicle = rows[0];
+
+    if (rows[0]) return rows[0];
+
+    const normalized = normalizeVehicleNumberKey(vehicleNumber);
+    const fuzzyRows = await this.prisma.$queryRaw<Vehicle[]>`
+      SELECT * FROM "vehicle_info"
+      WHERE UPPER(REPLACE("vehicle_number", '-', '')) = ${normalized}
+      LIMIT 1`;
+
+    const vehicle = fuzzyRows[0];
     if (!vehicle) throw new NotFoundError('Vehicle');
     return vehicle;
   }
