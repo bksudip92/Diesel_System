@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Routes } from '@/src/navigation/routes';
-import { colors, shadow, spacing } from '@/src/theme/tokens';
+import { colors, shadow, spacing, typography } from '@/src/theme/tokens';
 
 interface SectionLinkProps {
   label: string;
@@ -22,9 +23,13 @@ function SectionLink({ label, onPress }: SectionLinkProps) {
 
 export default function ReportsMenu() {
   const router = useRouter();
+  // The tabs navigator hides its own header; keep this screen's content clear
+  // of the status bar with the same inset the other tabs use.
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Text style={styles.screenTitle}>Reports</Text>
       <SectionLink label="All Vehicles" onPress={() => router.navigate(Routes.vehicleList)} />
       <SectionLink label="Monthly Report" onPress={() => router.navigate(Routes.monthlyReports)} />
     </View>
@@ -50,10 +55,13 @@ const styles = StyleSheet.create({
   sectionPressed: {
     opacity: 0.7,
   },
+  screenTitle: {
+    ...typography.title,
+    alignSelf: 'stretch',
+    marginBottom: spacing.md,
+  },
   sectionText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...typography.heading,
     padding: 10,
-    color: colors.textPrimary,
   },
 });

@@ -1,14 +1,35 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Button, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
+import {
+  Button,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Routes } from '@/src/navigation/routes';
-import { colors, radius, spacing } from '@/src/theme/tokens';
+import { colors, radius, spacing, typography } from '@/src/theme/tokens';
+
+/** Side of the scan square, sized off the viewport so it never overflows. */
+function frameSize(width: number) {
+  return Math.min(width * 0.68, 280);
+}
 
 export default function VehicleScanner() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+
+  const frame = frameSize(width);
+  // Centre the square on the viewport itself, not on the frame+label group —
+  // the previous version centred the group, which left the square riding high
+  // and the bottom half of the preview completely un-dimmed.
+  const edge = (width - frame) / 2;
+  const top = (height - frame) / 2;
 
   if (!permission?.granted) {
     return (
@@ -40,9 +61,18 @@ export default function VehicleScanner() {
         }
       />
       {!scanned ? (
-        <View style={styles.overlay}>
-          <View style={styles.scanFrame} />
-          <Text style={styles.overlayText}>Scan Vehicle QR Code</Text>
+        // Four scrim panels rather than one full-screen wash: the scan square
+        // stays at full brightness so the decoder has a clean target, while
+        // everything around it is pushed down to focus attention.
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <View style={[styles.scrim, { top: 0, height: top }]} />
+          <View style={[styles.scrim, { top: top + frame, bottom: 0 }]} />
+          <View style={[styles.scrim, { top, left: 0, width: edge, height: frame }]} />
+          <View style={[styles.scrim, { top, right: 0, width: edge, height: frame }]} />
+
+          <View style={[styles.frame, { top, left: edge, width: frame, height: frame }]} />
+
+          <Text style={[styles.hint, { top: top + frame + spacing.lg }]}>Scan Vehicle QR Code</Text>
         </View>
       ) : null}
     </View>
@@ -63,27 +93,25 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: colors.scannerScrim,
   },
-  scanFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#FFD700',
-    backgroundColor: 'transparent',
+  frame: {
+    position: 'absolute',
+    borderWidth: 3,
+    borderColor: colors.scannerFrame,
     borderRadius: radius.xl,
+    backgroundColor: 'transparent',
   },
-  overlayText: {
-    color: 'white',
-    fontSize: 16,
-    marginTop: spacing.md,
-    fontWeight: '600',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 10,
-    borderRadius: radius.sm,
+  hint: {
+    ...typography.body,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: colors.textInverse,
   },
 });

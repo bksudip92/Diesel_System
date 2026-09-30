@@ -9,16 +9,20 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { FuelLogFlat } from '@/src/types/models';
 import { useAuth } from '@/src/providers';
 import { useRecentLogs } from '@/src/features/fuel-logs/queries';
 import { DashboardLogCard } from '@/src/features/fuel-logs/components/DashboardLogCard';
 import { EmptyState, ErrorState, LoadingView } from '@/src/components/ui';
 import { Routes } from '@/src/navigation/routes';
-import { colors, spacing } from '@/src/theme/tokens';
+import { colors, spacing, typography } from '@/src/theme/tokens';
 
 export default function Dashboard() {
   const router = useRouter();
+  // The tabs navigator hides its own header, so this screen draws the title
+  // itself — it has to apply the status-bar inset or the title sits under it.
+  const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const logsQuery = useRecentLogs(profile?.place, 10);
 
@@ -26,7 +30,7 @@ export default function Dashboard() {
 
   if (!profile?.place) {
     return (
-      <View style={styles.flex}>
+      <View style={[styles.flex, { paddingTop: insets.top }]}>
         <StatusBar barStyle="dark-content" />
         <ErrorState message="Your profile has no place assigned. Contact an administrator." />
       </View>
@@ -34,7 +38,7 @@ export default function Dashboard() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.headerRow}>
         <Text style={styles.screenTitle}>Fuel Logs</Text>
@@ -108,9 +112,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   screenTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
+    ...typography.title,
   },
   listContent: {
     paddingHorizontal: spacing.md,

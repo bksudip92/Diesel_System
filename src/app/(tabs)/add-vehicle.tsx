@@ -1,13 +1,14 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { AppButton, TextField } from '@/src/components/ui';
 import { useCreateVehicle } from '@/src/features/vehicles/queries';
 import { normalizeVehicleNumber } from '@/src/lib/vehicle-number';
 import { getErrorMessage } from '@/src/lib/errors';
 import { Routes } from '@/src/navigation/routes';
-import { colors, spacing } from '@/src/theme/tokens';
+import { spacing, typography } from '@/src/theme/tokens';
 
 /**
  * Vehicle registration form. One field = one state entry, validated with a
@@ -67,6 +68,10 @@ const TEXT_FIELDS: { name: FieldName; label: string }[] = [
 export default function AddVehicleScreen() {
   const router = useRouter();
   const createVehicle = useCreateVehicle();
+  // The tabs navigator hides its own header, so this screen draws the title
+  // itself. The inset goes on the outer container, not the ScrollView, so it
+  // stays pinned while the form scrolls under the status bar.
+  const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState<VehicleFormValues>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
@@ -123,7 +128,7 @@ export default function AddVehicleScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'height' : undefined}
     >
       <ScrollView
@@ -188,10 +193,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '600',
+    ...typography.title,
     marginBottom: spacing.md,
-    color: colors.textPrimary,
   },
   buttonWrapper: {
     marginTop: spacing.sm,
