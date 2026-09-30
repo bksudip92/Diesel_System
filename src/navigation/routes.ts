@@ -2,8 +2,9 @@
  * Centralized navigation targets. Screens must use these instead of
  * scattering magic strings like `/month_name?month=...` through the code.
  *
- * Routes become fully typed once expo-router's typedRoutes generator runs
- * against the new `src/app` tree (done in the screen-migration phase).
+ * The dynamic helpers declare template-literal return types so the values
+ * satisfy expo-router's generated `Href` union — without the annotation they
+ * widen to `string` and every call site fails to typecheck.
  */
 
 export const Routes = {
@@ -13,13 +14,15 @@ export const Routes = {
   reportsMenu: '/(tabs)/reports',
 
   scanner: '/scanner',
-  fillFuel: (vehicleNumber: string) => `/fuel/${encodeURIComponent(vehicleNumber)}`,
-  qrShow: (vehicleNumber: string) => `/qr/${encodeURIComponent(vehicleNumber)}`,
+  fillFuel: (vehicleNumber: string): `/fuel/${string}` =>
+    `/fuel/${encodeURIComponent(vehicleNumber)}`,
+  qrShow: (vehicleNumber: string): `/qr/${string}` => `/qr/${encodeURIComponent(vehicleNumber)}`,
 
   vehicleList: '/vehicles',
-  editVehicle: (vehicleNumber: string) =>
+  editVehicle: (vehicleNumber: string): `/vehicles/edit?vehicle=${string}` =>
     `/vehicles/edit?vehicle=${encodeURIComponent(vehicleNumber)}`,
 
   monthlyReports: '/reports/months',
-  monthlyReportDetail: (month: string) => `/reports/months/${encodeURIComponent(month)}`,
+  monthlyReportDetail: (month: string): `/reports/months/${string}` =>
+    `/reports/months/${encodeURIComponent(month)}`,
 } as const;

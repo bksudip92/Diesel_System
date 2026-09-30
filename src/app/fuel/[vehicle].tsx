@@ -11,6 +11,7 @@ import {
 } from '@/src/features/fuel-logs/utils';
 import { nowHMMSTime, todayISODate } from '@/src/lib/format';
 import { getErrorMessage } from '@/src/lib/errors';
+import { Routes } from '@/src/navigation/routes';
 import { AppButton, LoadingView } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/theme/tokens';
 
@@ -111,8 +112,15 @@ export default function FillFuelScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>
-          {vehicleQuery.isError ? getErrorMessage(vehicleQuery.error) : 'Vehicle not found.'}
+          {vehicleQuery.isError
+            ? getErrorMessage(vehicleQuery.error)
+            : 'This vehicle is not registered with the system.'}
         </Text>
+        <Text style={styles.errorHint}>Scanned number: {vehicleNumber ?? '—'}</Text>
+        <View style={styles.errorActions}>
+          <AppButton label="Scan again" onPress={() => router.replace(Routes.scanner)} />
+          <AppButton label="Go back" onPress={() => router.back()} variant="outline" />
+        </View>
       </View>
     );
   }
@@ -325,5 +333,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.error,
     textAlign: 'center',
+  },
+  errorHint: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  errorActions: {
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+    alignSelf: 'stretch',
   },
 });

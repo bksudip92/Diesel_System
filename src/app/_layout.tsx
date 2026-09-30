@@ -1,8 +1,10 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { AppProviders, useAuth } from '@/src/providers';
 import { LoadingView } from '@/src/components/ui';
+import { ApiDebugOverlay } from '@/src/components/ui/ApiDebugOverlay';
 import { colors } from '@/src/theme/tokens';
 
 /** Blocks the whole navigator until the session check resolves. */
@@ -35,10 +37,10 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <AuthGate>
-        <StatusBar style="dark" backgroundColor={colors.background} />
-        <Stack
-          screenOptions={{ headerTitleStyle: { color: colors.textPrimary } }}
-        >
+        {/* `backgroundColor` is not a prop of expo-status-bar's StatusBar;
+            the Android bar colour comes from expo-system-ui instead. */}
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerTitleStyle: { color: colors.textPrimary } }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -56,6 +58,12 @@ export default function RootLayout() {
           <Stack.Screen name="reports/months" options={{ title: 'Monthly Reports' }} />
           <Stack.Screen name="reports/months/[name]" options={{ title: 'Monthly Report' }} />
         </Stack>
+
+        {/* Absolutely positioned and self-returning outside `__DEV__`, so this
+            adds no layout box to the navigator. */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <ApiDebugOverlay />
+        </View>
       </AuthGate>
     </AppProviders>
   );

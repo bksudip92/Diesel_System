@@ -38,6 +38,7 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+.opencode
 
 # generated native folders
 /ios

@@ -1,7 +1,8 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
+  Alert,
   Button,
   Platform,
   StatusBar,
@@ -11,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Routes } from '@/src/navigation/routes';
+import { sanitizeScannedVehicleNumber } from '@/src/lib/vehicle-number';
 import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
 /** Side of the scan square, sized off the viewport so it never overflows. */
@@ -23,6 +25,39 @@ export default function VehicleScanner() {
   const { width, height } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+
+  // This screen is a `presentation: 'modal'` stack entry, so it stays mounted
+  // after `router.navigate` pushes the fill-fuel form. Without this reset the
+  // `scanned` latch stays true forever: the overlay never comes back and the
+  // camera stops responding for the rest of the session.
+  useFocusEffect(
+    useCallback(() => {
+      setScanned(false);
+    }, []),
+  );
+
+  const handleScan = useCallback(
+    ({ data }: { data: string }) => {
+      setScanned(true);
+
+      // A QR payload is untrusted input. Without checking it, a stray
+      // character (e.g. a trailing "!") reaches the API verbatim and the
+      // vehicle lookup 404s on a case-sensitive SQL compare.
+      const vehicleNumber = sanitizeScannedVehicleNumber(data);
+      if (!vehicleNumber) {
+        Alert.alert(
+          'Invalid QR Code',
+          `"${data}" is not a valid vehicle number. Scan a vehicle QR issued by this app.`,
+        );
+        // Release the latch so the driver can immediately try another code.
+        setScanned(false);
+        return;
+      }
+
+      router.navigate(Routes.fillFuel(vehicleNumber));
+    },
+    [router],
+  );
 
   const frame = frameSize(width);
   // Centre the square on the viewport itself, not on the frame+label group —
@@ -49,16 +84,10 @@ export default function VehicleScanner() {
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
-        onBarcodeScanned={
-          scanned
-            ? undefined
-            : ({ data }: { data: string }) => {
-                if (data) {
-                  setScanned(true);
-                  router.navigate(Routes.fillFuel(data));
-                }
-              }
-        }
+        barcodeScannerSettings={{
+          barcodeTypes: ['qr'],
+        }}
+        onBarcodeScanned={scanned ? undefined : handleScan}
       />
       {!scanned ? (
         // Four scrim panels rather than one full-screen wash: the scan square
