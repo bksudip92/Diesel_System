@@ -64,7 +64,7 @@ export default function FillFuelScreen() {
       : (vehicle?.permitted_liters ?? null);
 
   const handleSubmit = () => {
-    if (!vehicleNumber) return;
+    if (!vehicleNumber || !vehicle) return;
 
     const validation = validateFuelLogInput(meterReading, filledLiters, previousReading);
     if (!validation.ok) {
@@ -78,7 +78,9 @@ export default function FillFuelScreen() {
 
     createLog.mutate(
       {
-        vehicle_number: vehicleNumber,
+        // Submit the resolved vehicle number in uppercase so casing from the
+        // QR code or an existing database row cannot affect backend matching.
+        vehicle_number: vehicle.vehicle_number.toUpperCase(),
         meter_reading: validation.meterReading + FUEL_API_TOLERANCE,
         filled_liters: validation.filledLiters,
         place,
@@ -89,13 +91,13 @@ export default function FillFuelScreen() {
         onSuccess: () => {
           Alert.alert(
             'Fuel Log Saved',
-            `${validation.filledLiters} L filled for ${vehicleNumber}. ` +
+            `${validation.filledLiters} L filled for ${vehicle.vehicle_number}. ` +
               `Distance: ${distance} km` +
               (efficiency > 0 ? ` • Efficiency: ${efficiency} km/L` : ''),
           );
           setMeterReading('');
           setFilledLiters('');
-          router.back();
+          router.replace(Routes.dashboard);
         },
         onError: () => {
           Alert.alert('Error', getErrorMessage(createLog.error));

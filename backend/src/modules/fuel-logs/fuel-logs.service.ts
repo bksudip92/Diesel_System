@@ -1,4 +1,10 @@
+import { Prisma } from '../../generated/prisma/client.js';
 import type { FuelLog, PrismaClient } from '../../generated/prisma/client.js';
+import {
+  VEHICLE_NUMBER_KEY_SQL,
+  findVehicleByNumber,
+  type VehicleLookupRow,
+} from '../../db/vehicleLookup.js';
 import { UnprocessableEntityError } from '../../utils/appError.js';
 import { normalizeVehicleNumberKey } from '../../utils/vehicleNumber.js';
 import type { CreateFuelLogInput, DateRangeQuery, RecentLogsQuery } from './fuel-logs.schema.js';
@@ -47,26 +53,21 @@ export class FuelLogsService {
     }));
   }
 
-  /** Reads through the `fuel_logs_with_vehicle` view for legacy parity. */
+  /**
+   * Reads through the `fuel_logs_with_vehicle` view for legacy parity.
+   *
+   * Matches on the normalised key, so a scan resolves to the same log as the
+   * exact stored number — the property `create()` depends on. One query
+   * suffices because key equality subsumes exact equality.
+   */
   async lastForVehicle(vehicleNumber: string): Promise<FuelLogWithVehicleNumber | null> {
-    const rows = await this.prisma.$queryRaw<FuelLogWithVehicleNumber[]>`
+    const rows = await this.prisma.$queryRaw<FuelLogWithVehicleNumber[]>(Prisma.sql`
       SELECT * FROM "fuel_logs_with_vehicle"
-      WHERE "vehicle_number" = ${vehicleNumber}
+      WHERE ${VEHICLE_NUMBER_KEY_SQL} = ${normalizeVehicleNumberKey(vehicleNumber)}
       ORDER BY "meter_reading" DESC
-      LIMIT 1`;
+      LIMIT 1`);
 
-    if (rows[0]) return rows[0];
-
-    // Same separator/case tolerance as VehiclesService.getByNumber, so a scan
-    // that resolves to the vehicle also resolves to its previous log.
-    const normalized = normalizeVehicleNumberKey(vehicleNumber);
-    const fuzzyRows = await this.prisma.$queryRaw<FuelLogWithVehicleNumber[]>`
-      SELECT * FROM "fuel_logs_with_vehicle"
-      WHERE UPPER(REPLACE("vehicle_number", '-', '')) = ${normalized}
-      ORDER BY "meter_reading" DESC
-      LIMIT 1`;
-
-    return fuzzyRows[0] ?? null;
+    return rows[0] ?? null;
   }
 
   async listByDateRange(query: DateRangeQuery): Promise<FuelLog[]> {
@@ -89,14 +90,16 @@ export class FuelLogsService {
    */
   async create(input: CreateFuelLogInput): Promise<FuelLogWithVehicleNumber> {
     return this.prisma.$transaction(async (tx) => {
-      const rows = await tx.$queryRaw<
-        { vehicle_id: number; vehicle_number: string; current_meter_reading: number }[]
-      >`
-        SELECT "vehicle_id", "vehicle_number", "current_meter_reading"
-        FROM "vehicles"
-        WHERE "vehicle_number" = ${input.vehicle_number}
-        FOR UPDATE`;
-      const vehicle = rows[0];
+      // Resolved through the shared lookup, so a scan that resolves the vehicle
+      // on read resolves it here too. This used to compare `vehicle_number`
+      // exactly, which made `POST` the only vehicle lookup that rejected a
+      // lowercase or unseparated scan with `Unknown vehicle` while its two
+      // sibling lookups accepted it. `forUpdate` locks the row for the rest of
+      // the transaction so two concurrent fills cannot both derive their
+      // distance from the same previous reading.
+      const vehicle = await findVehicleByNumber<VehicleLookupRow>(tx, input.vehicle_number, {
+        forUpdate: true,
+      });
       if (!vehicle) throw new UnprocessableEntityError(`Unknown vehicle '${input.vehicle_number}'`);
 
       const previousMeterReading = vehicle.current_meter_reading;
