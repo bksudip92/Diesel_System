@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '@/src/providers';
-import { BackendResponsePanel } from '@/src/components/ui/BackendResponsePanel';
+// import { BackendResponsePanel } from '@/src/components/ui/BackendResponsePanel';
 import { Routes } from '@/src/navigation/routes';
 import { colors, radius, spacing } from '@/src/theme/tokens';
 
@@ -114,7 +114,7 @@ export default function Login() {
               <Text style={styles.buttonText}>Login</Text>
             )}
           </Pressable>
-          <BackendResponsePanel />
+          {/*<BackendResponsePanel />*/}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

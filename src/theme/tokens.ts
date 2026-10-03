@@ -37,9 +37,9 @@ export const colors = {
   warningTextStrong: '#9a3412',
   warningText: '#7c2d12',
 
-  /** QR scanner overlay: frame accent and the scrim drawn outside it. */
+  /** QR scanner overlay: frame accent and the opaque mask outside it. */
   scannerFrame: '#FFD700',
-  scannerScrim: 'rgba(0, 0, 0, 0.6)',
+  scannerScrim: '#000000',
 } as const;
 
 export const spacing = {

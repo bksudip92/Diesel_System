@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { AppButton, TextField } from '@/src/components/ui';
+import { AppButton, OptionField, TextField } from '@/src/components/ui';
 import { useCreateVehicle } from '@/src/features/vehicles/queries';
 import { normalizeVehicleNumber } from '@/src/lib/vehicle-number';
 import { getErrorMessage } from '@/src/lib/errors';
@@ -56,14 +56,17 @@ const EMPTY_FORM: VehicleFormValues = {
 type FieldName = keyof VehicleFormValues;
 
 const TEXT_FIELDS: { name: FieldName; label: string }[] = [
-  { name: 'vehicle_name', label: 'Vehicle Name' },
-  { name: 'vehicle_type', label: 'Vehicle Type' },
-  { name: 'vehicle_class', label: 'Vehicle Class' },
-  { name: 'owner_name', label: 'Owner Name' },
-  { name: 'place', label: 'Place' },
-  { name: 'organization', label: 'Organization' },
   { name: 'department', label: 'Department' },
 ];
+
+const VEHICLE_TYPES = ['Truck', 'Bus', 'Van', 'Car', 'Auto', 'Excavator', 'JCB', 'Other'];
+const VEHICLE_CLASSES = ['Heavy', 'Medium', 'Light', 'Commercial', 'Private', 'Other'];
+const PLACES = ['Mumbai Depot', 'Pune Yard', 'Nashik Station', 'Nagpur Hub'];
+const ORGANIZATIONS = ['Tata Motors', 'Reliance Logistics', 'Godrej Fleet', 'Mahindra Transport'];
+const QUICK_TYPES = VEHICLE_TYPES.slice(0, 3);
+const QUICK_CLASSES = VEHICLE_CLASSES.slice(0, 3);
+const QUICK_PLACES = PLACES.slice(0, 3);
+const QUICK_ORGS = ORGANIZATIONS.slice(0, 3);
 
 export default function AddVehicleScreen() {
   const router = useRouter();
@@ -147,13 +150,65 @@ export default function AddVehicleScreen() {
           autoCapitalize="characters"
           error={fieldErrors.vehicle_number}
         />
+        <TextField
+          label="Vehicle Name"
+          value={form.vehicle_name}
+          onChangeText={(v) => setField('vehicle_name', v)}
+          maxLength={MAX_TEXT}
+          error={fieldErrors.vehicle_name}
+        />
+        <View style={styles.row}>
+          <OptionField
+            label="Vehicle Type"
+            value={form.vehicle_type}
+            onChange={(v) => setField('vehicle_type', v)}
+            options={VEHICLE_TYPES}
+            quickOptions={QUICK_TYPES}
+            error={fieldErrors.vehicle_type}
+          />
+          <View style={{ width: spacing.md }} />
+          <OptionField
+            label="Vehicle Class"
+            value={form.vehicle_class}
+            onChange={(v) => setField('vehicle_class', v)}
+            options={VEHICLE_CLASSES}
+            quickOptions={QUICK_CLASSES}
+            error={fieldErrors.vehicle_class}
+          />
+        </View>
+        <TextField
+          label="Owner Name"
+          value={form.owner_name}
+          onChangeText={(v) => setField('owner_name', v)}
+          maxLength={MAX_FIELD}
+          error={fieldErrors.owner_name}
+        />
+        <View style={styles.row}>
+          <OptionField
+            label="Place"
+            value={form.place}
+            onChange={(v) => setField('place', v)}
+            options={PLACES}
+            quickOptions={QUICK_PLACES}
+            error={fieldErrors.place}
+          />
+          <View style={{ width: spacing.md }} />
+          <OptionField
+            label="Organization"
+            value={form.organization}
+            onChange={(v) => setField('organization', v)}
+            options={ORGANIZATIONS}
+            quickOptions={QUICK_ORGS}
+            error={fieldErrors.organization}
+          />
+        </View>
         {TEXT_FIELDS.map(({ name, label }) => (
           <TextField
             key={name}
             label={label}
             value={form[name]}
             onChangeText={(v) => setField(name, v)}
-            maxLength={name === 'owner_name' ? MAX_FIELD : MAX_TEXT}
+            maxLength={MAX_TEXT}
             error={fieldErrors[name]}
           />
         ))}
@@ -194,7 +249,10 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.title,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  row: {
+    flexDirection: 'row',
   },
   buttonWrapper: {
     marginTop: spacing.sm,

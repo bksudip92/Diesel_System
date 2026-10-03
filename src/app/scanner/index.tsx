@@ -15,9 +15,9 @@ import { Routes } from '@/src/navigation/routes';
 import { sanitizeScannedVehicleNumber } from '@/src/lib/vehicle-number';
 import { colors, radius, spacing, typography } from '@/src/theme/tokens';
 
-/** Side of the scan square, sized off the viewport so it never overflows. */
-function frameSize(width: number) {
-  return Math.min(width * 0.68, 280);
+/** Keep the scan window usable in portrait and landscape without clipping the guidance. */
+function frameSize(width: number, height: number) {
+  return Math.floor(Math.min(width * 0.72, height * 0.42, 300));
 }
 
 export default function VehicleScanner() {
@@ -59,10 +59,7 @@ export default function VehicleScanner() {
     [router],
   );
 
-  const frame = frameSize(width);
-  // Centre the square on the viewport itself, not on the frame+label group —
-  // the previous version centred the group, which left the square riding high
-  // and the bottom half of the preview completely un-dimmed.
+  const frame = frameSize(width, height);
   const edge = (width - frame) / 2;
   const top = (height - frame) / 2;
 
@@ -90,18 +87,20 @@ export default function VehicleScanner() {
         onBarcodeScanned={scanned ? undefined : handleScan}
       />
       {!scanned ? (
-        // Four scrim panels rather than one full-screen wash: the scan square
-        // stays at full brightness so the decoder has a clean target, while
-        // everything around it is pushed down to focus attention.
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <View style={[styles.scrim, { top: 0, height: top }]} />
-          <View style={[styles.scrim, { top: top + frame, bottom: 0 }]} />
+          {/* Each panel owns its bounds. Keeping horizontal defaults off the
+              shared style prevents the side panels from stretching full-width. */}
+          <View style={[styles.scrim, { top: 0, left: 0, right: 0, height: top }]} />
+          <View style={[styles.scrim, { top: top + frame, left: 0, right: 0, bottom: 0 }]} />
           <View style={[styles.scrim, { top, left: 0, width: edge, height: frame }]} />
           <View style={[styles.scrim, { top, right: 0, width: edge, height: frame }]} />
 
+          <Text style={[styles.title, { bottom: height - top + spacing.xl }]}>Scan QR Code</Text>
           <View style={[styles.frame, { top, left: edge, width: frame, height: frame }]} />
-
-          <Text style={[styles.hint, { top: top + frame + spacing.lg }]}>Scan Vehicle QR Code</Text>
+          <View style={[styles.hintContainer, { top: top + frame + spacing.lg }]}>
+            <Text style={styles.hint}>Align the vehicle QR code inside the frame</Text>
+            <Text style={styles.subHint}>Scanning happens automatically</Text>
+          </View>
         </View>
       ) : null}
     </View>
@@ -124,9 +123,15 @@ const styles = StyleSheet.create({
   },
   scrim: {
     position: 'absolute',
-    left: 0,
-    right: 0,
     backgroundColor: colors.scannerScrim,
+  },
+  title: {
+    ...typography.title,
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    color: colors.textInverse,
+    textAlign: 'center',
   },
   frame: {
     position: 'absolute',
@@ -135,12 +140,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     backgroundColor: 'transparent',
   },
+  hintContainer: {
+    position: 'absolute',
+    left: spacing.xl,
+    right: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   hint: {
     ...typography.body,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
     color: colors.textInverse,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  subHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
 });

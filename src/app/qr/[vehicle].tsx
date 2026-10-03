@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
@@ -9,9 +9,11 @@ import {
   shareQrCode,
 } from '@/src/features/vehicles/qr';
 import { getErrorMessage } from '@/src/lib/errors';
+import { Routes } from '@/src/navigation/routes';
 import { colors, radius, spacing, shadow } from '@/src/theme/tokens';
 
 export default function VehicleQrScreen() {
+  const router = useRouter();
   const params = useLocalSearchParams<{ vehicle?: string | string[] }>();
   const vehicleNumber = Array.isArray(params.vehicle) ? params.vehicle[0] : params.vehicle;
 
@@ -51,6 +53,9 @@ export default function VehicleQrScreen() {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.replace(Routes.dashboard)}>
+        <Text style={styles.backButtonText}>← Back to Dashboard</Text>
+      </TouchableOpacity>
       <View style={styles.qrCard}>
         {vehicleNumber ? (
           <Image source={{ uri: qrUrl }} style={styles.qrImage} contentFit="contain" />
@@ -93,6 +98,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.lg,
     backgroundColor: colors.background,
+  },
+  backButton: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
+    padding: spacing.sm,
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   qrCard: {
     backgroundColor: colors.surface,

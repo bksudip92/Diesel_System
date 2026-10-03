@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { AppProviders, useAuth } from '@/src/providers';
 import { LoadingView } from '@/src/components/ui';
-import { ApiDebugOverlay } from '@/src/components/ui/ApiDebugOverlay';
+// import { ApiDebugOverlay } from '@/src/components/ui/ApiDebugOverlay';
 import { colors } from '@/src/theme/tokens';
 
 /** Blocks the whole navigator until the session check resolves. */
@@ -62,7 +62,7 @@ export default function RootLayout() {
         {/* Absolutely positioned and self-returning outside `__DEV__`, so this
             adds no layout box to the navigator. */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-          <ApiDebugOverlay />
+          {/*<ApiDebugOverlay />*/}
         </View>
       </AuthGate>
     </AppProviders>

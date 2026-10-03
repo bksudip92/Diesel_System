@@ -21,7 +21,7 @@ export function ApiDebugOverlay() {
   const [open, setOpen] = useState(false);
   const entries = useApiDebugEntries();
 
-  if (!__DEV__) return null;
+  // if (!__DEV__) return null;
 
   const errors = entries.filter((e) => e.ok === false).length;
 
