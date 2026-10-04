@@ -1,4 +1,4 @@
-import type * as ExpoMediaLibrary from 'expo-media-library';
+import type * as ExpoMediaLibrary from 'expo-media-library/legacy';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -22,7 +22,7 @@ type MediaLibraryModule = typeof ExpoMediaLibrary;
  */
 async function getMediaLibrary(): Promise<MediaLibraryModule> {
   try {
-    return await import('expo-media-library');
+    return await import('expo-media-library/legacy');
   } catch (error) {
     const missingNativeModule =
       error instanceof Error && error.message.includes('Cannot find native module');
